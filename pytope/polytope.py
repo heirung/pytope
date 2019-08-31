@@ -82,6 +82,9 @@ class Polytope:
     self._b = b
     self.n = n
     self.in_H_rep = True
+  #        if not self.in_V_rep:
+  #            self.V = np.empty((0,n))
+  #            self.R = np.empty((0,n))
 
   def _set_Ab_from_bounds(self, lb, ub):
     A_bound = []
@@ -102,7 +105,7 @@ class Polytope:
         raise ValueError(('Dimension of upper bound ub is '
                           f'{ub.size}; should be {n}'))
       A_bound.extend(np.eye(n))
-      b_bound.extend(ub), print(A_bound)
+      b_bound.extend(ub)
       self._set_Ab(A_bound, b_bound) # sets n and in_H_rep to True
 
   def __repr__(self):
@@ -111,6 +114,9 @@ class Polytope:
     if self.in_H_rep:
       ineq_spl = 'inequalities' if self.A.shape[0] > 1 else 'inequality'
       r += [f'\n\tHas H-rep with {self.A.shape[0]} {ineq_spl}']
+    # if self.hasVRep:
+    #     vert_spl = 'vertices' if self.V.shape[0] > 1 else 'vertex'
+    #     r += [f'\n\tHas V-rep with {self.nV} {vert_spl}']
     return ''.join(r)
 
   def __str__(self):
