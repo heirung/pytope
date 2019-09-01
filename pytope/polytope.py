@@ -12,17 +12,37 @@ class Polytope:
     self.in_V_rep = False
     self.A = np.empty((0, self.n))
     self.b = np.empty((0, 0))
+    self._V = np.empty((0, self.n))
 
-    # Check how the constructor was called:
-    lb_or_ub_passed = any(k in kwargs for k in ('lb', 'ub'))
+    # Check how the constructor was called. TODO: account for V=None, V=[],
+    # or similar
+    V_or_R_passed = len(args) == 1 or any(kw in kwargs for kw in ('V', 'R'))
+    lb_or_ub_passed = any(kw in kwargs for kw in ('lb', 'ub'))
+
+    # Parse V if passed as the only positional argument or as a keyword
+    V = kwargs.get('V')  # None if not
+    if len(args) == 1:  # V is the only positional argument
+      # Catch the case of passing different vertex lists to the constructor, as
+      # in P = Polytope(V_list1, V=V_list2):
+      if V and np.any(V != args[0]):
+        raise ValueError(('V passed as first argument and as a keyword, but '
+                          'with different values!'))
+      V = args[0] # (overwrites the kwarg if both were passed)
+    # Parse R if passed as keyword
+    if 'R' in kwargs:
+      raise ValueError('Rays are not implemented.')
+
+
 
     # Parse lower and upper bounds. Defaults to [], rather than None, if key is
     # not in kwargs (cleaner below).
     lb = np.atleast_1d(np.squeeze(kwargs.get('lb', [])))
     ub = np.atleast_1d(np.squeeze(kwargs.get('ub', [])))
 
+    if V_or_R_passed:
+      self._set_V(V)
     if lb_or_ub_passed:
-       self._set_Ab_from_bounds(lb, ub) # sets A, b, n, and in_H_rep (to True)
+      self._set_Ab_from_bounds(lb, ub) # sets A, b, n, and in_H_rep (to True)
 
   @property
   def A(self):
@@ -82,6 +102,8 @@ class Polytope:
     self._b = b
     self.n = n
     self.in_H_rep = True
+    if not self.in_V_rep:
+      self.V = np.empty((0, n))
 
   def _set_Ab_from_bounds(self, lb, ub):
     A_bound = []
@@ -93,17 +115,38 @@ class Polytope:
     # above), lb.size > 0 implies lb was a kwarg.
     if lb.size > 0:
       if not lb.size == n:
-        raise ValueError(('Dimension of lower bound lb is '
-                          f'{lb.size}; should be {n}'))
+        raise ValueError(('Dimension of lower bound lb is {lb.size}; '
+                          f'should be {n}.'))
       A_bound.extend(-np.eye(n))
       b_bound.extend(-lb)
     if ub.size > 0:
       if not ub.size == n:
-        raise ValueError(('Dimension of upper bound ub is '
-                          f'{ub.size}; should be {n}'))
+        raise ValueError((f'Dimension of upper bound ub is f{ub.size}; '
+                          f'should be {n}.'))
       A_bound.extend(np.eye(n))
       b_bound.extend(ub), print(A_bound)
       self._set_Ab(A_bound, b_bound) # sets n and in_H_rep to True
+
+  @property
+  def V(self):
+    return self._get_V()
+
+  @V.setter
+  def V(self, V):
+    return self._set_V(V)
+
+  def _get_V(self):
+    if not self.in_V_rep: # and self.in_H_rep: # TODO
+      # self.determine_V_rep() # TODO
+      raise ValueError('Polytope has no V representation')
+    return self._V
+
+  def _set_V(self, V):
+    self._V = np.asarray(V)
+    nV, n = self._V.shape
+    self.nV = nV
+    self.n = n
+    self.in_V_rep = True
 
   def __repr__(self):
     r = ['Polytope ']
@@ -111,6 +154,9 @@ class Polytope:
     if self.in_H_rep:
       ineq_spl = 'inequalities' if self.A.shape[0] > 1 else 'inequality'
       r += [f'\n\tHas H-rep with {self.A.shape[0]} {ineq_spl}']
+    if self.in_V_rep:
+      vert_spl = 'vertices' if self.V.shape[0] > 1 else 'vertex'
+      r += [f'\n\tHas V-rep with {self.nV} {vert_spl}']
     return ''.join(r)
 
   def __str__(self):
