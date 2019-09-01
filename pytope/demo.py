@@ -16,6 +16,16 @@ print('H =\n', P1.H)
 # Create a square polytope in R^2 from specifying the four vertices
 V2 = np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]])
 P2 = Polytope(V2)
-# Print the halfspace representation A*x <= b and H = [A b]
+# Print the array of vertices:
 print('P2: ', repr(P2))
 print('V =\n', P2.V)
+
+# Create a polytope in R^2 from specifying three half spaces (inequalities)
+A3 = [[-1, 0], [0, -1], [1, 1]]
+b3 = (0, 0, 2)
+P3 = Polytope(A3, b3)
+# Print the halfspace representation A*x <= b and H = [A b]
+print('P3: ', repr(P3))
+print('A =\n', P3.A)
+print('b =\n', P3.b)
+print('H =\n', P3.H)
