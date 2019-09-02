@@ -181,7 +181,14 @@ class Polytope:
   def __str__(self):
     return f'Polytope in R^{self.n}'
 
-  
+  def __add__(self, other):
+    if isinstance(other, Polytope):
+      raise ValueError('Minkowski sum of two polytopes not implemented')
+    else:
+      return P_plus_p(self, other)
+
+  def __radd__(self, other):
+    return P_plus_p(self, other)
 
   def determine_V_rep(self):  # also sets rays R (not implemented)
     # Vertex enumeration from halfspace representation using cddlib.
@@ -194,11 +201,11 @@ class Polytope:
     H.rep_type = cdd.RepType.INEQUALITY
     H_P = cdd.Polyhedron(H)
     # From the get_generators() documentation: For a polyhedron described as
-    #   P = conv(v_1, …, v_n) + nonneg(r_1, …, r_s),
+    #   P = conv(v_1, ..., v_n) + nonneg(r_1, ..., r_s),
     # the V-representation matrix is [t V] where t is the column vector with
     # n ones followed by s zeroes, and V is the stacked matrix of n vertex
     # row vectors on top of s ray row vectors.
-    P_tV = H_P.get_generators() # type(P_tV):  <class 'cdd.Matrix'>
+    P_tV = H_P.get_generators()  # type(P_tV):  <class 'cdd.Matrix'>
     tV = np.array(P_tV[:])
     V_rows = tV[:, 0] == 1  # bool array of which rows contain vertices
     R_rows = tV[:, 0] == 0  # and which contain rays (~ V_rows)
@@ -211,6 +218,7 @@ class Polytope:
   def plot(self, ax, **kwargs):
     h_patch = ax.add_patch(Polygon(self.V, **kwargs))
     return h_patch # handle to the patch
+
 
 def P_plus_p(P, point):
   # Polytope + point: The sum of a polytope in R^n and an n-vector

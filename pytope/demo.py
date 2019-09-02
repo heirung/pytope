@@ -1,6 +1,6 @@
 import numpy as np
 
-from pytope import Polytope, P_plus_p
+from pytope import Polytope
 
 import matplotlib.pyplot as plt
 
@@ -36,7 +36,7 @@ print('V =\n', P3.V)
 
 # P4: P3 shifted by a point p4
 p4 = (1.4, 0.7)
-P4 = P_plus_p(P3, p4)
+P4 = P3 + p4
 
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
