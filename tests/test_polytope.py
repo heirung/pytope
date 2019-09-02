@@ -85,6 +85,25 @@ class TestPolytope(unittest.TestCase):
     with self.assertRaises(ValueError):
       Polytope(A3, b3, lb=lb1, ub=ub1)
 
+  def Test_P_plus_p(self):
+    # Test that a 2D Polytope plus a few different 2D vectors give the
+    # correct sum when using the + operator. Test by manually computing the
+    # shifted vertices and comparing the result to the vertices of the
+    # Polytope that results from the addition using the + operator. Test that
+    # the vector can be in a variety of formats, including tuple, list,
+    # list of lists, 1D numpy array, and 2D numpy row vector (array).
+    V = [[-1, 0], [1, 0], [0, 1]]
+    P = Polytope(V)
+    points = [(1, 1),
+              [-1, 2],
+              [[1.5], [-0.5]],
+              np.array([-2, -0.1]),
+              np.array([[-2], [-0.1]])]
+    P_plus_p_results = [P + p for p in points]
+    p_columns = [np.array(np.squeeze(p), dtype=float)[:, np.newaxis]
+                 for p in points]
+    self.assertTrue(all([(PVpp.V == P.V + p.T).all()
+                         for PVpp, p in zip(P_plus_p_results, p_columns)]))
 
 if __name__ == '__main__':
   unittest.main()
