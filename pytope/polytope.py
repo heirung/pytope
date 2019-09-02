@@ -171,15 +171,7 @@ class Polytope:
   def centroid(self):
     return np.sum(self.V, axis=0) / self.nV
 
-  def sorted_V(self):
-    # Sort vertices (increasing angle: the point (x1, x2) = (1, 0) has angle 0).
-    # np.arctan2(y, x) returns angles in the range [-pi, pi], so vertices are
-    # sorted clockwise from 9:00 (angle pi). Note that the first argument is y.
-    c = self.centroid
-    order = np.argsort(np.arctan2(self.V[1] - c, self.V[0] - c))
-    print(order)
-
-  def __repr__(self):
+def __repr__(self):
     r = ['Polytope ']
     r += ['(empty)' if self.n == 0 else f'in R^{self.n}']
     if self.in_H_rep:
