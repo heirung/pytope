@@ -1,5 +1,6 @@
 import numpy as np
 import cdd # pycddlib -- for vertex enumeration from H-representation
+from matplotlib.patches import Polygon
 
 class Polytope:
 
@@ -204,3 +205,7 @@ class Polytope:
     self._set_V(V)
     if R_rows.any():
       raise ValueError('Support for rays not implemented')
+
+  def plot(self, ax, **kwargs):
+    h_patch = ax.add_patch(Polygon(self.V, **kwargs))
+    return h_patch # handle to the patch
