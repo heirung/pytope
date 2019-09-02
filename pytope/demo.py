@@ -1,6 +1,6 @@
 import numpy as np
 
-from pytope import Polytope
+from pytope import Polytope, P_plus_p
 
 import matplotlib.pyplot as plt
 
@@ -24,7 +24,7 @@ print('V =\n', P2.V)
 
 # Create a triangle in R^2 from specifying three half spaces (inequalities)
 A3 = [[1, 0], [0, 1], [-1, -1]]
-b3 = (3, 2, -1.5)
+b3 = (2, 1, -1.5)
 P3 = Polytope(A3, b3)
 # Print the halfspace representation A*x <= b and H = [A b]
 print('P3: ', repr(P3))
@@ -34,6 +34,10 @@ print('H =\n', P3.H)
 # Determine and print the vertices:
 print('V =\n', P3.V)
 
+# P4: P3 shifted by a point p4
+p4 = (1.4, 0.7)
+P4 = P_plus_p(P3, p4)
+
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
 fig, ax = plt.subplots()
@@ -42,3 +46,4 @@ plt.axis([-1.5, 4.5, -2.5, 3.5])
 P1.plot(ax, fill=False, edgecolor='r', linewidth=2)
 P2.plot(ax, facecolor='g', edgecolor='k', linewidth=2, alpha=0.5)
 P3.plot(ax, facecolor='b', edgecolor='k', linewidth=2, alpha=0.5)
+P4.plot(ax, facecolor='b', edgecolor='k', linewidth=2, alpha=0.3)

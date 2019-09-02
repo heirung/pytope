@@ -181,6 +181,8 @@ class Polytope:
   def __str__(self):
     return f'Polytope in R^{self.n}'
 
+  
+
   def determine_V_rep(self):  # also sets rays R (not implemented)
     # Vertex enumeration from halfspace representation using cddlib.
     # TODO: shift the polytope to the center?
@@ -209,3 +211,17 @@ class Polytope:
   def plot(self, ax, **kwargs):
     h_patch = ax.add_patch(Polygon(self.V, **kwargs))
     return h_patch # handle to the patch
+
+def P_plus_p(P, point):
+  # Polytope + point: The sum of a polytope in R^n and an n-vector
+  p = np.array(np.squeeze(point), dtype=float)[:, np.newaxis]
+  if p.size != P.n or p.shape[1] != 1 or p.ndim != 2:  # ensure p is n x 1
+    raise ValueError(f'The point must be a {P.n}x1 vector')
+  # V-rep: The sum is all vertices of P shifted by p.
+  # ﻿Not necessary to tile/repeat since p.T broadcasts, but could do something
+  # like np.tile(q.T, (P.nV, 1)) or np.repeat(p.T, P.nV, axis=0).
+  if P.in_V_rep:
+    P_plus_p_V = P.V + p.T
+  elif P.in_H_rep:
+    raise ValueError('Sum of Polytope and point not implemented for H-rep')
+  return Polytope(P_plus_p_V)

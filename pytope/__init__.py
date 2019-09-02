@@ -1,3 +1,3 @@
 
-from .polytope import Polytope
+from .polytope import *
 # from .zonotope import Zonotope
