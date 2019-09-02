@@ -2,6 +2,8 @@ import numpy as np
 
 from pytope import Polytope
 
+import matplotlib.pyplot as plt
+
 
 # Create a polytope in R^2 with 1 <= x1 <= 3, 3 <= x2 4
 lower_bound1 = (1, 2) # [1, 2]' <= x
@@ -29,3 +31,5 @@ print('P3: ', repr(P3))
 print('A =\n', P3.A)
 print('b =\n', P3.b)
 print('H =\n', P3.H)
+# Determine and print the vertices:
+print('V =\n', P3.V)

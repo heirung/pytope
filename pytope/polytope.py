@@ -1,5 +1,5 @@
 import numpy as np
-
+import cdd # pycddlib -- for vertex enumeration from H-representation
 
 class Polytope:
 
@@ -152,13 +152,15 @@ class Polytope:
     return self._set_V(V)
 
   def _get_V(self):
-    if not self.in_V_rep:  # and self.in_H_rep: # TODO
-      # self.determine_V_rep() # TODO
-      raise ValueError('Polytope has no V representation')
+    if not self.in_V_rep:
+      if self.in_H_rep:
+        self.determine_V_rep()
+      else:
+        raise ValueError('Polytope in neither H nor V representation')
     return self._V
 
   def _set_V(self, V):
-    self._V = np.asarray(V)
+    self._V = np.asarray(V, dtype=float)
     nV, n = self._V.shape
     self.nV = nV
     self.n = n
@@ -177,3 +179,28 @@ class Polytope:
 
   def __str__(self):
     return f'Polytope in R^{self.n}'
+
+  def determine_V_rep(self):  # also sets rays R (not implemented)
+    # Vertex enumeration from halfspace representation using cddlib.
+    # TODO: shift the polytope to the center?
+    #        print('b: ', self.b)
+    #        print(self.b.shape, ' h-stacked with ', self.A.shape)
+    # cdd uses the halfspace representation [b, -A] | b - Ax >= 0
+    b_mA = np.hstack((self.b, -self.A))  # [b, -A]
+    H = cdd.Matrix(b_mA, number_type='float')
+    H.rep_type = cdd.RepType.INEQUALITY
+    H_P = cdd.Polyhedron(H)
+    # From the get_generators() documentation: For a polyhedron described as
+    #   P = conv(v_1, …, v_n) + nonneg(r_1, …, r_s),
+    # the V-representation matrix is [t V] where t is the column vector with
+    # n ones followed by s zeroes, and V is the stacked matrix of n vertex
+    # row vectors on top of s ray row vectors.
+    P_tV = H_P.get_generators() # type(P_tV):  <class 'cdd.Matrix'>
+    tV = np.array(P_tV[:])
+    V_rows = tV[:, 0] == 1  # bool array of which rows contain vertices
+    R_rows = tV[:, 0] == 0  # and which contain rays (~ V_rows)
+    V = tV[V_rows, 1:]  # array of vertices (one per row)
+    R = tV[R_rows, 1:]  # and of rays
+    self._set_V(V)
+    if R_rows.any():
+      raise ValueError('Support for rays not implemented')

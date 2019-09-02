@@ -18,6 +18,7 @@ class TestPolytope(unittest.TestCase):
     n1 = len(ub1)
     A1 = np.vstack((-np.eye(n1), np.eye(n1)))
     b1 = np.concatenate((-np.asarray(lb1), np.asarray(ub1)))[:, np.newaxis]
+    V1 = [[1, -4], [1, -2], [3, -4], [3, -2]]
 
     P1 = Polytope(lb=lb1, ub=ub1)
 
@@ -27,9 +28,12 @@ class TestPolytope(unittest.TestCase):
     self.assertTrue(np.all(P1.A == A1))
     self.assertTrue(np.all(P1.b == b1))
     self.assertTrue(np.all(P1.H == np.hstack((A1, b1))))
+    self.assertTrue(all(v in P1.V.tolist() for v in V1))
+    self.assertTrue(P1.in_V_rep)
     self.assertTrue(np.issubdtype(P1.A.dtype, np.float))
     self.assertTrue(np.issubdtype(P1.b.dtype, np.float))
     self.assertTrue(np.issubdtype(P1.H.dtype, np.float))
+    self.assertTrue(np.issubdtype(P1.V.dtype, np.float))
 
     # Create an R^2 Polytope in V-representation from a list of four vertices
     # Check that dimension n and vertex list V are set correctly
@@ -41,6 +45,7 @@ class TestPolytope(unittest.TestCase):
     self.assertTrue(P2.in_V_rep)
     self.assertFalse(P2.in_H_rep)
     self.assertEqual(P2.n, n2)
+    self.assertTrue(all(v in P2.V.tolist() for v in V2.tolist()))
     self.assertTrue(np.issubdtype(P2.V.dtype, np.float))
 
     # Create an R^2 Polytope in H-representation by specifying A and b in
@@ -49,6 +54,7 @@ class TestPolytope(unittest.TestCase):
     b3 = (0, 0, 2)
     n3 = 2
     H3 = np.hstack((A3, np.asarray(b3, dtype=float)[:, np.newaxis]))
+    V3 = [[0, 0], [0, 2], [2, 0]]
 
     P3 = Polytope(A3, b3)
 
@@ -58,9 +64,12 @@ class TestPolytope(unittest.TestCase):
     self.assertTrue(np.all(P3.A == np.asarray(A3, dtype=float)))
     self.assertTrue(np.all(P3.b == np.asarray(b3, dtype=float)[:, np.newaxis]))
     self.assertTrue(np.all(P3.H == H3))
+    self.assertTrue(all(v in P3.V.tolist() for v in V3))
+    self.assertTrue(P3.in_V_rep)
     self.assertTrue(np.issubdtype(P3.A.dtype, np.float))
     self.assertTrue(np.issubdtype(P3.b.dtype, np.float))
     self.assertTrue(np.issubdtype(P3.H.dtype, np.float))
+    self.assertTrue(np.issubdtype(P3.V.dtype, np.float))
 
     # Ensure illegal use of the constructor raises an error.
     with self.assertRaises(ValueError):
