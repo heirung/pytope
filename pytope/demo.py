@@ -40,10 +40,10 @@ P4 = P3 + p4
 
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
-fig, ax = plt.subplots()
-plt.grid()
-plt.axis([-1.5, 4.5, -2.5, 3.5])
-P1.plot(ax, fill=False, edgecolor='r', linewidth=2)
-P2.plot(ax, facecolor='g', edgecolor='k', linewidth=2, alpha=0.5)
-P3.plot(ax, facecolor='b', edgecolor='k', linewidth=2, alpha=0.5)
-P4.plot(ax, facecolor='b', edgecolor='k', linewidth=2, alpha=0.3)
+# fig, ax = plt.subplots()
+# plt.grid()
+# plt.axis([-1.5, 4.5, -2.5, 3.5])
+# P1.plot(ax, fill=False, edgecolor='r', linewidth=2)
+# P2.plot(ax, facecolor='g', edgecolor='k', linewidth=2, alpha=0.5)
+# P3.plot(ax, facecolor='b', edgecolor='k', linewidth=2, alpha=0.5)
+# P4.plot(ax, facecolor='b', edgecolor='k', linewidth=2, alpha=0.3)
