@@ -38,6 +38,10 @@ print('V =\n', P3.V)
 p4 = (1.4, 0.7)
 P4 = P3 + p4
 
+# P5: P4 shifted by a point p5 (in negative direction)
+p5 = (0.4, 2)
+P5 = P4 - p5
+
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
 fig, ax = plt.subplots()
@@ -45,5 +49,9 @@ plt.grid()
 plt.axis([-1.5, 4.5, -2.5, 3.5])
 P1.plot(ax, fill=False, edgecolor='r', linewidth=2)
 P2.plot(ax, facecolor='g', edgecolor=(0, 0, 0), linewidth=1)
-P3.plot(ax, facecolor='b', edgecolor='k', edgealpha=0.6, linewidth=2, alpha=0.5)
-P4.plot(ax, facecolor='b')
+P3.plot(ax, facecolor='b', edgecolor='k', linewidth=2, alpha=0.5)
+P4.plot(ax, facecolor='lightsalmon')
+plt.scatter(P4.V[:, 0], P4.V[:, 1], c='k', marker='x')  # the vertices of P4
+# Polytope implements an additional keyword edgealpha:
+P5.plot(ax, fill=False, edgecolor='b', linewidth=8, edgealpha=0.2)
+plt.plot(P5.centroid[0], P5.centroid[1], 'o')  # the centroid of P5

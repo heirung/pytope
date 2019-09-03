@@ -205,6 +205,14 @@ class Polytope:
   def __radd__(self, other):
     return P_plus_p(self, other)
 
+  def __sub__(self, other):
+    if isinstance(other, Polytope):
+      raise ValueError('Pontryagin difference of two polytopes not implemented')
+    else:
+      return P_plus_p(self, other, subtract_p=True)
+
+  # def __rsub__(self, other):  # p - P -- raises TypeError
+
   def determine_V_rep(self):  # also sets rays R (not implemented)
     # Vertex enumeration from halfspace representation using cddlib.
     # TODO: shift the polytope to the center? (centroid? Chebyshev center?)
@@ -275,11 +283,15 @@ class Polytope:
     return h_patch # handle to the patch
 
 
-def P_plus_p(P, point):
-  # Polytope + point: The sum of a polytope in R^n and an n-vector
+def P_plus_p(P, point, subtract_p=False):
+  # Polytope + point: The sum of a polytope in R^n and an n-vector -- P + p
+  # If subtract_p == True, compute P - p instead. This implementation allows
+  # writing Polytope(...) - (1.0, 0.5) or similar by overloading __sub__ with
+  # this function.
   p = np.array(np.squeeze(point), dtype=float)[:, np.newaxis]
   if p.size != P.n or p.shape[1] != 1 or p.ndim != 2:  # ensure p is n x 1
     raise ValueError(f'The point must be a {P.n}x1 vector')
+  if subtract_p: p = -p # add -p if 'sub'
   # V-rep: The sum is all vertices of P shifted by p.
   # ﻿Not necessary to tile/repeat since p.T broadcasts, but could do something
   # like np.tile(q.T, (P.nV, 1)) or np.repeat(p.T, P.nV, axis=0).
