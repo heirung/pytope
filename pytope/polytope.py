@@ -231,6 +231,46 @@ class Polytope:
       raise ValueError('Support for rays not implemented')
 
   def plot(self, ax, **kwargs):
+    # Plot Polytope. Add separate patches for the fill and the edge, so that
+    # the fill is below the gridlines (at zorder 0.4) and the edge edge is
+    # above (at zorder 2, same as regular plot). Gridlines are at zorder 1.5
+    # by default and at  (1 is default), which is below gridlines, which are
+    # at zorder 1.5 by default 0.5 if setting ax.set_axisbelow(True),
+    # so plotting the fill at 0.4 ensures the fill is always below the grid.
+    h_patch = [] # handle, return as tuple
+    V_sorted = self.V_sorted()
+    # Check for edgecolor. Default is (0, 0, 0, 0), with the fourth 0 being
+    # alpha (0 is fully transparent). Passingedgecolor='r', e.g., later
+    # translates to (1.0, 0.0, 0.0, 1).
+    edgecolor_default = (0, 0, 0, 0)
+    edgecolor = kwargs.pop('edgecolor', edgecolor_default)
+    # Handle specific cases: edge transparent or set explicitly to None
+    if ((type(edgecolor) is tuple and len(edgecolor) == 4 and edgecolor[3] == 0)
+        or edgecolor is None):
+      edgecolor = edgecolor_default
+    # Added keyword for edge transparency: edgealpha (default: 1.0)
+    edgealpha_default = 1.0
+    edgealpha = kwargs.pop('edgealpha', edgealpha_default)
+    # Check for fill and facecolor. fill is default True. The Polygon
+    # documentation lists facecolor=None as valid but it results in blue
+    # filling (preserving this behavior).
+    fill = kwargs.pop('fill', True)
+    facecolor = kwargs.pop('facecolor', None)
+    # test for any non-empty string and rbg tuple, and handle black as rbg
+    if any(edgecolor) or edgecolor == (0, 0, 0):
+      # Plot edge:
+      temp_dict = {**kwargs,
+                   **{'fill': False, 'edgecolor': edgecolor, 'zorder': 2,
+                      'alpha': edgealpha}}
+      h_patch.append(ax.add_patch(Polygon(V_sorted, **temp_dict)))
+    if fill or facecolor:
+      # Plot fill:
+      temp_dict = {**kwargs,
+                   **{'edgecolor': None, 'facecolor': facecolor, 'zorder': 0.4}}
+      h_patch.append(ax.add_patch(Polygon(V_sorted, **temp_dict)))
+    return tuple(h_patch)  # handle(s) to the patch(es)
+
+  def plot_basic(self, ax, **kwargs):
     h_patch = ax.add_patch(Polygon(self.V_sorted(), **kwargs))
     return h_patch # handle to the patch
 
