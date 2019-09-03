@@ -171,7 +171,7 @@ class Polytope:
   def centroid(self):
     return np.sum(self.V, axis=0) / self.nV
 
-def __repr__(self):
+  def __repr__(self):
     r = ['Polytope ']
     r += ['(empty)' if self.n == 0 else f'in R^{self.n}']
     if self.in_H_rep:
