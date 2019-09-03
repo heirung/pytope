@@ -171,6 +171,17 @@ class Polytope:
   def centroid(self):
     return np.sum(self.V, axis=0) / self.nV
 
+  def V_sorted(self):
+    # Sort vertices (increasing angle: the point (x1, x2) = (1, 0) has angle 0).
+    # np.arctan2(y, x) returns angles in the range [-pi, pi], so vertices are
+    # sorted clockwise from 9:00 (angle pi). Note that the first argument is y.
+    # Mainly for plotting and not implemented for n != 2.
+    if self.n != 2:
+      raise  ValueError('V_sorted() not implemented for n != 2')
+    c = self.centroid
+    order = np.argsort(np.arctan2(self.V[:, 1] - c[1], self.V[:, 0] - c[0]))
+    return self.V[order, :]
+
   def __repr__(self):
     r = ['Polytope ']
     r += ['(empty)' if self.n == 0 else f'in R^{self.n}']
@@ -220,7 +231,7 @@ class Polytope:
       raise ValueError('Support for rays not implemented')
 
   def plot(self, ax, **kwargs):
-    h_patch = ax.add_patch(Polygon(self.V, **kwargs))
+    h_patch = ax.add_patch(Polygon(self.V_sorted(), **kwargs))
     return h_patch # handle to the patch
 
 
