@@ -182,7 +182,7 @@ class Polytope:
     order = np.argsort(np.arctan2(self.V[:, 1] - c[1], self.V[:, 0] - c[0]))
     return self.V[order, :]
 
-  def __repr__(self):
+  def __repr__(self):  # TODO: does not print nicely for list of Polytopes
     r = ['Polytope ']
     r += ['(empty)' if self.n == 0 else f'in R^{self.n}']
     if self.in_H_rep:
@@ -207,7 +207,7 @@ class Polytope:
 
   def determine_V_rep(self):  # also sets rays R (not implemented)
     # Vertex enumeration from halfspace representation using cddlib.
-    # TODO: shift the polytope to the center?
+    # TODO: shift the polytope to the center? (centroid? Chebyshev center?)
     #        print('b: ', self.b)
     #        print(self.b.shape, ' h-stacked with ', self.A.shape)
     # cdd uses the halfspace representation [b, -A] | b - Ax >= 0
