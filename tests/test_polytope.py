@@ -120,5 +120,23 @@ class TestPolytope(unittest.TestCase):
     self.assertTrue(all([(PHmp.V == PH_V - p.T).all()
                          for PHmp, p in zip(PH_minus_p_results, p_columns)]))
 
+  def test_scale(self):
+    # Create a polytope from a vertex list, scale, and check resulting vertices
+    V = np.array([[1.9, 0.2], [0, -2], [-0.3, 0.17], [3, 4.01]])
+    PV = Polytope(V)
+    factorV = 1.3
+    # Create a polytope from inequalities, scale, and check resulting (A, b)
+    A = np.array([[-1, -2], [2, 0.9], [-1.3, 3]])
+    b = np.array([[-0.6, 3.1, 4]]).T
+    PH = Polytope(A, b)
+    factorH = -0.8
+    # Check that scaling is commutative
+    self.assertTrue(np.allclose((PV * factorV).V, (factorV * PV).V))
+    self.assertTrue(np.allclose((PH * factorH).H, (factorH * PH).H))
+    # Check that scaling only changes V and b, not A
+    self.assertTrue(np.allclose((PV * factorV).V, V * factorV))
+    self.assertTrue(np.allclose((PH * factorH).A, A))
+    self.assertTrue(np.allclose((PH * factorH).b, b * factorH))
+
 if __name__ == '__main__':
   unittest.main()

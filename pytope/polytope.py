@@ -64,6 +64,15 @@ class Polytope:
         raise ValueError('No lower bound can be greater than an upper bound')
       self._set_Ab_from_bounds(lb, ub)  # sets A, b, n, and in_H_rep (to True)
 
+  # To enable linear mapping (a numpy ndarray M multiplies a polytope P: M * P)
+  # with the * operator, set __array_ufunc__ = None so that the result is not
+  # M.__mul__(P), which is an ndarray of scalar multiples of P: {m_ij * P}. With
+  # __array_ufunc__ set to None here, the result of M * P is P.__rmul__(M),
+  # which calls P.linear_map(M). See
+  # https://docs.scipy.org/doc/numpy-1.13.0/neps/ufunc-overrides.html
+  # An alternative is to set __array_priority__ = 1000 or some other high value.
+  __array_ufunc__ = None
+
   @property
   def A(self):
     return self._get_A()
@@ -215,6 +224,32 @@ class Polytope:
 
   # def __rsub__(self, other):  # p - P -- raise TypeError (not well defined)
 
+  def __mul__(self, other):
+    # self * other: scaling if other is scalar, inverse linear map if other is a
+    # matrix (inverse=True has no effect on scaling).
+    return self.multiply(other, inverse=True)
+
+  def __rmul__(self, other):
+    # other * self: scaling if other is scalar, linear map if other is a matrix.
+    return self.multiply(other)
+
+  def multiply(self, other, inverse=False):
+    # polytope P: s * P or P * s with s a scalar
+    # linear map: M * P with M a matrix
+    # inverse linear map: P * M with M a matrix
+    if isinstance(other, Polytope):
+      raise ValueError('Product of two polytopes not implemented')
+    # TODO: now assuming a numeric type that can be squeezed -- fix
+    # other can be a scalar (ndim=0) or a matrix (ndim=2)
+    factor = np.squeeze(other)
+    if factor.ndim == 0:
+      return scale(self, other)
+    elif factor.ndim == 2:
+      raise ValueError('(Inverse) linear map not implemented')
+    else:
+      raise ValueError('Mulitplication with numeric type other than scalar and '
+                       'square matrix not implemented')
+
   def determine_V_rep(self):  # also sets rays R (not implemented)
     # Vertex enumeration from halfspace representation using cddlib.
     # TODO: shift the polytope to the center? (centroid? Chebyshev center?)
@@ -240,7 +275,6 @@ class Polytope:
     else:
       V = np.empty((0, self.n))
     self._set_V(V)
-
 
   def plot(self, ax, **kwargs):
     # Plot Polytope. Add separate patches for the fill and the edge, so that
@@ -307,5 +341,14 @@ def P_plus_p(P, point, subtract_p=False):
   #   A * x <= b  ==>  A * (q - p) <= b  ==>  A * q <= b + A * p
   # That is, the shifted polytope has H-rep (A, b + A * p).
   if P.in_H_rep:
-    P_shifted._set_Ab(P.A, P.b + P.A @ p) # TODO: redesign this
+    P_shifted._set_Ab(P.A, P.b + P.A @ p)  # TODO: redesign this
   return P_shifted
+
+def scale(P, s):
+  # TODO: handle s == 0 specifically
+  P_scaled = Polytope()
+  if P.in_H_rep:
+    P_scaled._set_Ab(P.A, P.b * s)  # TODO: redesign this
+  if P.in_V_rep:
+    P_scaled.V = P.V * s
+  return P_scaled

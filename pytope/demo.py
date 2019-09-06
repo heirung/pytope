@@ -42,6 +42,11 @@ P4 = P3 + p4
 p5 = [0.4, 2]
 P5 = P4 - p5
 
+# P6: P2 scaled by s6 and shifted by p6
+s6 = 0.2
+p6 = -np.array([[0.4], [1.6]])
+P6 = s6 * P2 + p6
+
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
 fig, ax = plt.subplots()
@@ -55,3 +60,4 @@ plt.scatter(P4.V[:, 0], P4.V[:, 1], c='k', marker='x')  # the vertices of P4
 # Polytope implements an additional keyword edgealpha:
 P5.plot(ax, fill=False, edgecolor='b', linewidth=8, edgealpha=0.2)
 plt.plot(P5.centroid[0], P5.centroid[1], 'o')  # the centroid of P5
+P6.plot(ax, facecolor='g', edgecolor=(0, 0, 0), linewidth=1)
