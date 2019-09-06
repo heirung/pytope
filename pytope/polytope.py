@@ -39,7 +39,7 @@ class Polytope:
       V = args[0]  # (overwrites the kwarg if both were passed)
     # Parse R if passed as keyword
     if 'R' in kwargs:
-      raise ValueError('Rays are not implemented.')
+      raise ValueError('Support for rays currently not implemented.')
 
     if V_or_R_passed:
       self._set_V(V)
@@ -211,13 +211,11 @@ class Polytope:
     else:
       return P_plus_p(self, other, subtract_p=True)
 
-  # def __rsub__(self, other):  # p - P -- raises TypeError
+  # def __rsub__(self, other):  # p - P -- raise TypeError (not well defined)
 
   def determine_V_rep(self):  # also sets rays R (not implemented)
     # Vertex enumeration from halfspace representation using cddlib.
     # TODO: shift the polytope to the center? (centroid? Chebyshev center?)
-    #        print('b: ', self.b)
-    #        print(self.b.shape, ' h-stacked with ', self.A.shape)
     # cdd uses the halfspace representation [b, -A] | b - Ax >= 0
     b_mA = np.hstack((self.b, -self.A))  # [b, -A]
     H = cdd.Matrix(b_mA, number_type='float')
@@ -292,11 +290,16 @@ def P_plus_p(P, point, subtract_p=False):
   if p.size != P.n or p.shape[1] != 1 or p.ndim != 2:  # ensure p is n x 1
     raise ValueError(f'The point must be a {P.n}x1 vector')
   if subtract_p: p = -p # add -p if 'sub'
+  P_shifted = Polytope()
   # V-rep: The sum is all vertices of P shifted by p.
-  # ﻿Not necessary to tile/repeat since p.T broadcasts, but could do something
+  # Not necessary to tile/repeat since p.T broadcasts, but could do something
   # like np.tile(q.T, (P.nV, 1)) or np.repeat(p.T, P.nV, axis=0).
   if P.in_V_rep:
-    P_plus_p_V = P.V + p.T
-  elif P.in_H_rep:
-    raise ValueError('Sum of Polytope and point not implemented for H-rep')
-  return Polytope(P_plus_p_V)
+    P_shifted.V = P.V + p.T
+  # H-rep: A * x <= b shifted by p means that any point q = x + p in the shifted
+  # polytope satisfies A * q <= b + A * p, since
+  #   A * x <= b  ==>  A * (q - p) <= b  ==>  A * q <= b + A * p
+  # That is, the shifted polytope has H-rep (A, b + A * p).
+  if P.in_H_rep:
+    P_shifted._set_Ab(P.A, P.b + P.A @ p) # TODO: redesign this
+  return P_shifted

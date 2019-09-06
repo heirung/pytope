@@ -39,7 +39,7 @@ p4 = (1.4, 0.7)
 P4 = P3 + p4
 
 # P5: P4 shifted by a point p5 (in negative direction)
-p5 = (0.4, 2)
+p5 = [0.4, 2]
 P5 = P4 - p5
 
 # Plot all of the polytopes.

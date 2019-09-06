@@ -85,25 +85,40 @@ class TestPolytope(unittest.TestCase):
     with self.assertRaises(ValueError):
       Polytope(A3, b3, lb=lb1, ub=ub1)
 
-  def Test_P_plus_p(self):
+  def test_P_plus_p(self):
     # Test that a 2D Polytope plus a few different 2D vectors give the
-    # correct sum when using the + operator. Test by manually computing the
-    # shifted vertices and comparing the result to the vertices of the
-    # Polytope that results from the addition using the + operator. Test that
-    # the vector can be in a variety of formats, including tuple, list,
-    # list of lists, 1D numpy array, and 2D numpy row vector (array).
-    V = [[-1, 0], [1, 0], [0, 1]]
-    P = Polytope(V)
+    # correct shift when using the + and - operators. Test by manually
+    # computing the shifted vertices and comparing the result to the vertices
+    # of the Polytope that results from the addition using the +/- operators.
+    # Test that the vector can be in a variety of formats, including tuple,
+    # list, list of lists, 1D numpy array, and 2D numpy row vector (array). Test
+    # by constructing the Polytope both from the vertex list V and from a half-
+    # space representation (A, b)
+    V = np.array([[-1, 0], [1, 0], [0, 1]])
+    PV = Polytope(V)
+    A = [[-1, 0], [0, -1], [1, 1]]
+    b = [-2, -3, 8]
+    PH = Polytope(A, b)
+    PH_V = PH.V
     points = [(1, 1),
               [-1, 2],
               [[1.5], [-0.5]],
               np.array([-2, -0.1]),
               np.array([[-2], [-0.1]])]
-    P_plus_p_results = [P + p for p in points]
     p_columns = [np.array(np.squeeze(p), dtype=float)[:, np.newaxis]
                  for p in points]
-    self.assertTrue(all([(PVpp.V == P.V + p.T).all()
-                         for PVpp, p in zip(P_plus_p_results, p_columns)]))
+    PV_plus_p_results = [PV + p for p in points]
+    PV_minus_p_results = [PV - p for p in points]
+    PH_plus_p_results = [PH + p for p in points]
+    PH_minus_p_results = [PH - p for p in points]
+    self.assertTrue(all([(PVpp.V == V + p.T).all()
+                         for PVpp, p in zip(PV_plus_p_results, p_columns)]))
+    self.assertTrue(all([(PVmp.V == V - p.T).all()
+                         for PVmp, p in zip(PV_minus_p_results, p_columns)]))
+    self.assertTrue(all([(PHpp.V == PH_V + p.T).all()
+                         for PHpp, p in zip(PH_plus_p_results, p_columns)]))
+    self.assertTrue(all([(PHmp.V == PH_V - p.T).all()
+                         for PHmp, p in zip(PH_minus_p_results, p_columns)]))
 
 if __name__ == '__main__':
   unittest.main()
