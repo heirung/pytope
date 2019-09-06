@@ -60,6 +60,8 @@ class Polytope:
       # not in kwargs (cleaner below).
       lb = np.atleast_1d(np.squeeze(kwargs.get('lb', [])))
       ub = np.atleast_1d(np.squeeze(kwargs.get('ub', [])))
+      if (lb > ub).any():
+        raise ValueError('No lower bound can be greater than an upper bound')
       self._set_Ab_from_bounds(lb, ub)  # sets A, b, n, and in_H_rep (to True)
 
   @property
