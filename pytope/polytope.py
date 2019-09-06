@@ -78,7 +78,7 @@ class Polytope:
     return self._A
 
   def _set_A(self, A):  # careful if setting A independent of b
-    self._A = np.array(A, ndmin=2, dtype=float)  # prevents shape (n,) when m = 1
+    self._A = np.array(A, ndmin=2, dtype=float)  # prevents shape (n,) for m = 1
 
   @property
   def b(self):
@@ -188,10 +188,10 @@ class Polytope:
     r = ['Polytope ']
     r += ['(empty)' if self.n == 0 else f'in R^{self.n}']
     if self.in_H_rep:
-      ineq_spl = 'inequalities' if self.A.shape[0] > 1 else 'inequality'
+      ineq_spl = 'inequalities' if self.A.shape[0] != 1 else 'inequality'
       r += [f'\n\tIn H-rep: {self.A.shape[0]} {ineq_spl}']
     if self.in_V_rep:
-      vert_spl = 'vertices' if self.V.shape[0] > 1 else 'vertex'
+      vert_spl = 'vertices' if self.V.shape[0] != 1 else 'vertex'
       r += [f'\n\tIn V-rep: {self.nV} {vert_spl}']
     return ''.join(r)
 
@@ -230,13 +230,17 @@ class Polytope:
     # row vectors on top of s ray row vectors.
     P_tV = H_P.get_generators()  # type(P_tV):  <class 'cdd.Matrix'>
     tV = np.array(P_tV[:])
-    V_rows = tV[:, 0] == 1  # bool array of which rows contain vertices
-    R_rows = tV[:, 0] == 0  # and which contain rays (~ V_rows)
-    V = tV[V_rows, 1:]  # array of vertices (one per row)
-    R = tV[R_rows, 1:]  # and of rays
+    if tV.any(): # tV == [] if the Polytope is empty
+      V_rows = tV[:, 0] == 1  # bool array of which rows contain vertices
+      R_rows = tV[:, 0] == 0  # and which contain rays (~ V_rows)
+      V = tV[V_rows, 1:]  # array of vertices (one per row)
+      R = tV[R_rows, 1:]  # and of rays
+      if R_rows.any():
+        raise ValueError('Support for rays not implemented')
+    else:
+      V = np.empty((0, self.n))
     self._set_V(V)
-    if R_rows.any():
-      raise ValueError('Support for rays not implemented')
+
 
   def plot(self, ax, **kwargs):
     # Plot Polytope. Add separate patches for the fill and the edge, so that
