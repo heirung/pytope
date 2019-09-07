@@ -82,8 +82,10 @@ class Polytope:
     return self._set_A(A)
 
   def _get_A(self):
-    # if not self.in_H_rep and self.in_V_rep:
-    #   self.set_Ab_from_V()
+    if not self.in_H_rep and self.in_V_rep:
+      # self.set_Ab_from_V()
+      if self._A.shape[0] == 0: # A is empty, ensure it has correct dimension
+        self._A = np.empty((0, self.n))
     return self._A
 
   def _set_A(self, A):  # careful if setting A independent of b
@@ -177,7 +179,8 @@ class Polytope:
     nV, n = self._V.shape
     self.nV = nV
     self.n = n
-    self.in_V_rep = True
+    if nV:  # in_V_rep if V is not an empty array
+      self.in_V_rep = True
 
   @property
   def centroid(self):
@@ -207,6 +210,17 @@ class Polytope:
 
   def __str__(self):
     return f'Polytope in R^{self.n}'
+
+  def __bool__(self): # return true if the polytope is not empty
+    return self.in_V_rep or self.in_H_rep
+
+  def __neg__(self):
+    neg_P = Polytope()
+    if self.in_V_rep:
+      neg_P.V = -self.V
+    if self.in_H_rep:
+      neg_P._set_Ab(-self.A, self.b)
+    return neg_P
 
   def __add__(self, other):
     if isinstance(other, Polytope):

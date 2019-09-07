@@ -53,6 +53,9 @@ rot_mat7 = np.array([[np.cos(rot7), -np.sin(rot7)],
                      [np.sin(rot7), np.cos(rot7)]])
 P7 = rot_mat7 * P2
 
+# P8: -P6
+P8 = -P6
+
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
 fig, ax = plt.subplots()
@@ -68,4 +71,6 @@ P5.plot(ax, fill=False, edgecolor='b', linewidth=8, edgealpha=0.2)
 plt.plot(P5.centroid[0], P5.centroid[1], 'o')  # the centroid of P5
 P6.plot(ax, facecolor='g', edgecolor=(0, 0, 0), linewidth=1)
 P7.plot(ax, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
+        linewidth=1, edgealpha=0.3)
+P8.plot(ax, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
         linewidth=1, edgealpha=0.3)
