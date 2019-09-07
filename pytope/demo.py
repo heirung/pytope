@@ -47,6 +47,12 @@ s6 = 0.2
 p6 = -np.array([[0.4], [1.6]])
 P6 = s6 * P2 + p6
 
+# P7: P2 rotated 20 degrees
+rot7 = np.pi / 9.0
+rot_mat7 = np.array([[np.cos(rot7), -np.sin(rot7)],
+                     [np.sin(rot7), np.cos(rot7)]])
+P7 = rot_mat7 * P2
+
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
 fig, ax = plt.subplots()
@@ -61,3 +67,5 @@ plt.scatter(P4.V[:, 0], P4.V[:, 1], c='k', marker='x')  # the vertices of P4
 P5.plot(ax, fill=False, edgecolor='b', linewidth=8, edgealpha=0.2)
 plt.plot(P5.centroid[0], P5.centroid[1], 'o')  # the centroid of P5
 P6.plot(ax, facecolor='g', edgecolor=(0, 0, 0), linewidth=1)
+P7.plot(ax, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
+        linewidth=1, edgealpha=0.3)

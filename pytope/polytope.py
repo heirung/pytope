@@ -234,7 +234,7 @@ class Polytope:
     return self.multiply(other)
 
   def multiply(self, other, inverse=False):
-    # polytope P: s * P or P * s with s a scalar
+    # scale: s * P or P * s with s a scalar and P a polytope
     # linear map: M * P with M a matrix
     # inverse linear map: P * M with M a matrix
     if isinstance(other, Polytope):
@@ -245,10 +245,13 @@ class Polytope:
     if factor.ndim == 0:
       return scale(self, other)
     elif factor.ndim == 2:
-      raise ValueError('(Inverse) linear map not implemented')
+      if inverse:
+        raise ValueError('Inverse linear map P * M not implemeted')
+      else:
+        return linear_map(other, self)
     else:
       raise ValueError('Mulitplication with numeric type other than scalar and '
-                       'square matrix not implemented')
+                       'matrix not implemented')
 
   def determine_V_rep(self):  # also sets rays R (not implemented)
     # Vertex enumeration from halfspace representation using cddlib.
@@ -352,3 +355,15 @@ def scale(P, s):
   if P.in_V_rep:
     P_scaled.V = P.V * s
   return P_scaled
+
+def linear_map(M, P):
+  # Compute the linear map M * P through the vertex representation of V. If P
+  # does not have a vertex representation, determine the vertex representation
+  # first. In this case, the H-representation of M * P is NOT determined before
+  # returning M * P.
+  n = M.shape[1]
+  if P.n != n:
+    raise ValueError('Dimension of M and P do not agree in linear map M * P')
+  # TODO: implement linear map in H-rep for invertible M
+  # TODO: M_P = Polytope(P.V @ M.T), if P.in_H_rep: M_P.determine_H_rep()?
+  return Polytope(P.V @ M.T)
