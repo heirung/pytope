@@ -20,44 +20,44 @@ class Polytope:
     lb_or_ub_passed = any(kw in kwargs for kw in ('lb', 'ub'))
 
     if V_or_R_passed and A_and_b_passed:
-      raise ValueError('Cannot specify V in addition to A and b.')
+      raise ValueError('Cannot specify V in addition to A and b')
 
     if (V_or_R_passed or A_and_b_passed) and lb_or_ub_passed:
-      raise ValueError('Cannot specify bounds in addition to V, R, A, or b.')
+      raise ValueError('Cannot specify bounds in addition to V, R, A, or b')
 
     if ('A' in kwargs) ^ ('b' in kwargs): # XOR
-      raise ValueError('Cannot pass just one of A and b as keywords.')
+      raise ValueError('Cannot pass just one of A and b as keywords')
 
     # Parse V if passed as the only positional argument or as a keyword
-    V = kwargs.get('V')  # None if not
-    if len(args) == 1:  # V is the only positional argument
-      # Catch the case of passing different vertex lists to the constructor, as
-      # in P = Polytope(V_list1, V=V_list2):
-      if V and np.any(V != args[0]):
-        raise ValueError(('V passed as first argument and as a keyword, but '
-                          'with different values!'))
-      V = args[0]  # (overwrites the kwarg if both were passed)
-    # Parse R if passed as keyword
-    if 'R' in kwargs:
-      raise ValueError('Support for rays currently not implemented.')
-
     if V_or_R_passed:
+      V = kwargs.get('V')  # None if not
+      if len(args) == 1:  # V is the only positional argument
+        # Prevent passing vertex lists as first positional argument and as
+        # keyword, as in P = Polytope(V_list1, V=V_list2):
+        if V is not None:
+          raise ValueError('V cannot be passed as the first argument and as a ' 
+                           'keyword')
+        V = args[0]  # The first positional argument is V
+      # Parse R if passed as keyword
+      if 'R' in kwargs:
+        raise ValueError('Support for rays currently not implemented')
       self._set_V(V)
 
+    # Parse A and b if passed as first two positional arguments or as keywords
     if A_and_b_passed:
       A = kwargs.get('A')  # None if not
       b = kwargs.get('b')  # None if not
-      #  Catch the case of passing different A or b as arg and kwarg:
-      if len(args) == 2:
-        if (A and A != args[0]) or (b and b != args[1]):
-          raise ValueError(('A (or b) passed as first (or second) argument and '
-                            'as a keyword, but with different values'))
-        A, b = args[:2]  # (overwrites the kwarg if both were passed)
+      # Prevent passing A or b in both args and kwargs:
+      if len(args) == 2:  # A and b passed in args
+        if A is not None or b is not None:  # A or b passed in kwargs
+          raise ValueError(('A (or b) cannot be passed as the first (or second)'
+                            ' argument and as a keyword'))
+        A, b = args[:2]  # The first two positional arguments are A and b
       self._set_Ab(A, b)
 
     if lb_or_ub_passed:
-      # Parse lower and upper bounds. Defaults to [], rather than None, if key is
-      # not in kwargs (cleaner below).
+      # Parse lower and upper bounds. Defaults to [], rather than None,
+      # if key is not in kwargs (cleaner below).
       lb = np.atleast_1d(np.squeeze(kwargs.get('lb', [])))
       ub = np.atleast_1d(np.squeeze(kwargs.get('ub', [])))
       if (lb > ub).any():
@@ -107,7 +107,7 @@ class Polytope:
     self._b = np.array(np.squeeze(b), dtype=float)[:, np.newaxis]
 
   @property
-  def H(self):  # the matrix [A b]
+  def H(self):  # the matrix H = [A b]
     return self._get_H_mat()
 
   def _get_H_mat(self):
@@ -131,7 +131,8 @@ class Polytope:
     self._set_A(A)
     self._set_b(b)
     self.n = n
-    self.in_H_rep = True
+    if A.shape[0] and b.shape[0]:  # in_H_rep if A and b are not empty arrays
+      self.in_H_rep = True
 
   def _set_Ab_from_bounds(self, lb, ub):
     A_bound = []
@@ -144,13 +145,13 @@ class Polytope:
     if lb.size > 0:
       if not lb.size == n:
         raise ValueError((f'Dimension of lower bound lb is {lb.size}; '
-                          f'should be {n}.'))
+                          f'should be {n}'))
       A_bound.extend(-np.eye(n))
       b_bound.extend(-lb)
     if ub.size > 0:
       if not ub.size == n:
         raise ValueError((f'Dimension of upper bound ub is f{ub.size}; '
-                          f'should be {n}.'))
+                          f'should be {n}'))
       A_bound.extend(np.eye(n))
       b_bound.extend(ub)
       self._set_Ab(A_bound, b_bound)  # sets n and in_H_rep to True
