@@ -11,6 +11,7 @@ setup(name='pytope',
       packages=['pytope'],
       install_requires=[
         'numpy',
+        'scipy',
         'pycddlib',
         'matplotlib'
       ],

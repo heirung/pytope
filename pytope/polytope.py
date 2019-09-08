@@ -1,5 +1,6 @@
 import numpy as np
 import cdd # pycddlib -- for vertex enumeration from H-representation
+from scipy.spatial import ConvexHull  # for finding A, b from V-representation
 from matplotlib.patches import Polygon
 
 class Polytope:
@@ -83,10 +84,15 @@ class Polytope:
 
   def _get_A(self):
     if not self.in_H_rep and self.in_V_rep:
-      # self.set_Ab_from_V()
-      if self._A.shape[0] == 0: # A is empty, ensure it has correct dimension
-        self._A = np.empty((0, self.n))
+      self.determine_H_rep()
+      # if self._A.shape[0] == 0: # A is empty, ensure it has correct dimension
+      #   self._A = np.empty((0, self.n))
     return self._A
+
+  def _get_V(self):
+    if not self.in_V_rep and self.in_H_rep:
+        self.determine_V_rep()
+    return self._V
 
   def _set_A(self, A):  # careful if setting A independent of b
     self._A = np.array(A, ndmin=2, dtype=float)  # prevents shape (n,) for m = 1
@@ -100,8 +106,8 @@ class Polytope:
     return self._set_b(b)
 
   def _get_b(self):
-    # if not self.in_H_rep and self.in_V_rep:
-    #   self.set_Ab_from_V()
+    if not self.in_H_rep and self.in_V_rep:
+      self.determine_H_rep()
     return self._b
 
   def _set_b(self, b):  # Careful when setting b indep of A (use for scaling P)
@@ -264,6 +270,13 @@ class Polytope:
     else:
       raise ValueError('Mulitplication with numeric type other than scalar and '
                        'matrix not implemented')
+
+  def determine_H_rep(self):
+    if not self.in_V_rep:
+      raise ValueError('Cannot determine H-representation: no V representation')
+    H = ConvexHull(self.V).equations  # H = [A, -b]
+    A, b_negative = np.split(H, [-1], axis=1)
+    self._set_Ab(A, -b_negative)
 
   def determine_V_rep(self):  # also sets rays R (not implemented)
     # Vertex enumeration from halfspace representation using cddlib.
