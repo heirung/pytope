@@ -164,11 +164,8 @@ class Polytope:
     return self._set_V(V)
 
   def _get_V(self):
-    if not self.in_V_rep:
-      if self.in_H_rep:
+    if not self.in_V_rep and self.in_H_rep:
         self.determine_V_rep()
-      else:
-        raise ValueError('Polytope in neither H nor V representation')
     return self._V
 
   def _set_V(self, V):
@@ -257,6 +254,8 @@ class Polytope:
     # Vertex enumeration from halfspace representation using cddlib.
     # TODO: shift the polytope to the center? (centroid? Chebyshev center?)
     # cdd uses the halfspace representation [b, -A] | b - Ax >= 0
+    if not self.in_H_rep:
+      raise ValueError('Cannot determine V-representation: no H representation')
     b_mA = np.hstack((self.b, -self.A))  # [b, -A]
     H = cdd.Matrix(b_mA, number_type='float')
     H.rep_type = cdd.RepType.INEQUALITY
