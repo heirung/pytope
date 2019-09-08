@@ -138,5 +138,19 @@ class TestPolytope(unittest.TestCase):
     self.assertTrue(np.allclose((PH * factorH).A, A))
     self.assertTrue(np.allclose((PH * factorH).b, b * factorH))
 
+  def test_determine_H_rep(self):
+    # Create a polyope from a vertex list, determine its H-rep, use that H-rep
+    # to create a new polytope, determine the vertices of the new polytope, and
+    # ascertain that the vertex lists are the same.
+    V1 = np.array([
+      [-1.42, -1.87, -1.53, -1.38, -0.80,  1.88,  1.93, 1.90, 1.59, 0.28],
+      [ 1.96, -0.26, -1.53, -1.78, -1.76, -1.48, -0.49, 1.18, 1.79, 1.89]
+    ]).T
+    P1 = Polytope(V1)
+    P1.determine_H_rep()
+    P2 = Polytope(P1.A, P1.b)
+    P2.determine_V_rep()
+    self.assertTrue(np.allclose(P1.V_sorted(), P2.V_sorted()))
+
 if __name__ == '__main__':
   unittest.main()
