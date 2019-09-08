@@ -4,6 +4,7 @@ from pytope import Polytope
 
 import matplotlib.pyplot as plt
 
+np.random.seed(1)
 
 # Create a polytope in R^2 with -1 <= x1 <= 4, -2 <= x2 <= 3
 lower_bound1 = (-1, -2)  # [-1, -2]' <= x
@@ -56,6 +57,11 @@ P7 = rot_mat7 * P2
 # P8: -P6
 P8 = -P6
 
+# P9: The convex hull of a set of 30 random points in [2, 1]' <= x [3, 2]'
+V9 = np.random.uniform((1, 2), (2, 3), (30, 2))
+P9 = Polytope(V9)
+P9.minimal_V_rep()
+
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
 fig, ax = plt.subplots()
@@ -74,3 +80,6 @@ P7.plot(ax, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
         linewidth=1, edgealpha=0.3)
 P8.plot(ax, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
         linewidth=1, edgealpha=0.3)
+P9.plot(ax, facecolor='gray', alpha=0.6, edgecolor='k')
+plt.plot(V9[:, 0], V9[:, 1], 'or', marker='o', markersize=2) # random points
+plt.plot(P9.V[:, 0], P9.V[:, 1], 'og', marker='o', markersize=1) # P9's vertices

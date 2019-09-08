@@ -306,6 +306,14 @@ class Polytope:
       V = np.empty((0, self.n))
     self._set_V(V)
 
+  def minimal_V_rep(self):
+    # Remove redundant points from the vertex list.
+    # TODO: find and account for cases where this does not work
+    # Indices of the unique vertices forming the convex hull:
+    i_V_minimal = ConvexHull(self.V).vertices
+    self.V = self.V[i_V_minimal, :]
+    return self.V
+
   def plot(self, ax, **kwargs):
     # Plot Polytope. Add separate patches for the fill and the edge, so that
     # the fill is below the gridlines (at zorder 0.4) and the edge edge is

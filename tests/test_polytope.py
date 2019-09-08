@@ -152,5 +152,29 @@ class TestPolytope(unittest.TestCase):
     P2.determine_V_rep()
     self.assertTrue(np.allclose(P1.V_sorted(), P2.V_sorted()))
 
+  def test_minimal_V_rep(self):
+    # Create a polytope from a minimal set of vertices, vertices on the convex
+    # hull of those vertices, and random vertices in the interior of the convex
+    # hull. Compute the minimal V-representation and test whether it matches the
+    # minimal vertex list.
+    x_lb = (-3, 0.9)
+    x_ub = (0.6, 4)
+    # Set of vertices that form the convex hull:
+    V_minimal = np.array([[x_lb[0], x_lb[1]], [x_lb[0], x_ub[1]],
+                          [x_ub[0], x_ub[1]], [x_ub[0], x_lb[1]]])
+    # Points that are redundant in the sense they are on simplices of the
+    # convex hull but they are not vertices:
+    V_redundant = np.array([[(x_ub[0] + x_lb[0]) / 2, x_lb[1]],
+                            [x_ub[0], (x_ub[1] + x_lb[1]) / 2]])
+    # Random points in the interior of the convex hull:
+    V_random = np.random.uniform(x_lb, x_ub, (40, len(x_lb)))
+    V = np.vstack((V_minimal, V_redundant, V_random))
+    P_min = Polytope(V_minimal)
+    P = Polytope(V)
+    self.assertTrue(P.nV == V.shape[0])
+    P.minimal_V_rep()
+    self.assertTrue(P.nV == V_minimal.shape[0])
+    self.assertTrue(np.allclose(P.V_sorted(), P_min.V_sorted()))
+
 if __name__ == '__main__':
   unittest.main()
