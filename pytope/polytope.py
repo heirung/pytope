@@ -41,7 +41,7 @@ class Polytope:
         V = args[0]  # The first positional argument is V
       # Parse R if passed as keyword
       if 'R' in kwargs:
-        raise ValueError('Support for rays currently not implemented')
+        raise NotImplementedError('Support for rays currently not implemented')
       self._set_V(V)
 
     # Parse A and b if passed as first two positional arguments or as keywords
@@ -180,10 +180,13 @@ class Polytope:
   def _set_V(self, V):
     self._V = np.asarray(V, dtype=float)
     nV, n = self._V.shape
-    self.nV = nV
     self.n = n
     if nV:  # in_V_rep if V is not an empty array
       self.in_V_rep = True
+
+  @property
+  def nV(self):
+    return self.V.shape[0] # determines V-rep if not determined
 
   @property
   def centroid(self):
@@ -195,7 +198,7 @@ class Polytope:
     # sorted clockwise from 9:00 (angle pi). Note that the first argument is y.
     # Mainly for plotting and not implemented for n != 2.
     if self.n != 2:
-      raise  ValueError('V_sorted() not implemented for n != 2')
+      raise  NotImplementedError('V_sorted() not implemented for n != 2')
     c = self.centroid
     order = np.argsort(np.arctan2(self.V[:, 1] - c[1], self.V[:, 0] - c[0]))
     return self.V[order, :]
@@ -227,7 +230,7 @@ class Polytope:
 
   def __add__(self, other):
     if isinstance(other, Polytope):
-      raise ValueError('Minkowski sum of two polytopes not implemented')
+      return minkowski_sum(self, other)
     else:
       return P_plus_p(self, other)
 
@@ -236,7 +239,8 @@ class Polytope:
 
   def __sub__(self, other):
     if isinstance(other, Polytope):
-      raise ValueError('Pontryagin difference of two polytopes not implemented')
+      raise NotImplementedError('Pontryagin difference of two polytopes not '
+                                'implemented')
     else:
       return P_plus_p(self, other, subtract_p=True)
 
@@ -256,7 +260,7 @@ class Polytope:
     # linear map: M * P with M a matrix
     # inverse linear map: P * M with M a matrix
     if isinstance(other, Polytope):
-      raise ValueError('Product of two polytopes not implemented')
+      raise NotImplementedError('Product of two polytopes not implemented')
     # TODO: now assuming a numeric type that can be squeezed -- fix
     # other can be a scalar (ndim=0) or a matrix (ndim=2)
     factor = np.squeeze(other)
@@ -264,16 +268,16 @@ class Polytope:
       return scale(self, other)
     elif factor.ndim == 2:
       if inverse:
-        raise ValueError('Inverse linear map P * M not implemeted')
+        raise NotImplementedError('Inverse linear map P * M not implemeted')
       else:
         return linear_map(other, self)
     else:
-      raise ValueError('Mulitplication with numeric type other than scalar and '
-                       'matrix not implemented')
+      raise NotImplementedError('Mulitplication with numeric type other than '
+                       'scalar and matrix not implemented')
 
   def determine_H_rep(self):
     if not self.in_V_rep:
-      raise ValueError('Cannot determine H-representation: no V representation')
+      raise ValueError('Cannot determine H representation: no V representation')
     H = ConvexHull(self.V).equations  # H = [A, -b]
     A, b_negative = np.split(H, [-1], axis=1)
     self._set_Ab(A, -b_negative)
@@ -283,7 +287,7 @@ class Polytope:
     # TODO: shift the polytope to the center? (centroid? Chebyshev center?)
     # cdd uses the halfspace representation [b, -A] | b - Ax >= 0
     if not self.in_H_rep:
-      raise ValueError('Cannot determine V-representation: no H representation')
+      raise ValueError('Cannot determine V representation: no H representation')
     b_mA = np.hstack((self.b, -self.A))  # [b, -A]
     H = cdd.Matrix(b_mA, number_type='float')
     H.rep_type = cdd.RepType.INEQUALITY
@@ -301,7 +305,7 @@ class Polytope:
       V = tV[V_rows, 1:]  # array of vertices (one per row)
       R = tV[R_rows, 1:]  # and of rays
       if R_rows.any():
-        raise ValueError('Support for rays not implemented')
+        raise NotImplementedError('Support for rays not implemented')
     else:
       V = np.empty((0, self.n))
     self._set_V(V)
@@ -312,7 +316,6 @@ class Polytope:
     # Indices of the unique vertices forming the convex hull:
     i_V_minimal = ConvexHull(self.V).vertices
     self.V = self.V[i_V_minimal, :]
-    return self.V
 
   def plot(self, ax, **kwargs):
     # Plot Polytope. Add separate patches for the fill and the edge, so that
@@ -364,9 +367,10 @@ def P_plus_p(P, point, subtract_p=False):
   # If subtract_p == True, compute P - p instead. This implementation allows
   # writing Polytope(...) - (1.0, 0.5) or similar by overloading __sub__ with
   # this function.
+  # TODO: rename -- this is also a Minkowski sum
   p = np.array(np.squeeze(point), dtype=float)[:, np.newaxis]
   if p.size != P.n or p.shape[1] != 1 or p.ndim != 2:  # ensure p is n x 1
-    raise ValueError(f'The point must be a {P.n}x1 vector')
+    raise ValueError(f'The point must be a vector in R^{P.n}')
   if subtract_p: p = -p # add -p if 'sub'
   P_shifted = Polytope()
   # V-rep: The sum is all vertices of P shifted by p.
@@ -381,6 +385,23 @@ def P_plus_p(P, point, subtract_p=False):
   if P.in_H_rep:
     P_shifted._set_Ab(P.A, P.b + P.A @ p)  # TODO: redesign this
   return P_shifted
+
+def minkowski_sum(P, Q):
+  # Minkowski sum of two convex polytopes P and Q: {p + q | p in P, q in Q}.
+  # In vertex representation, this is the convex hull of the pairwise sum of all
+  # combinations of points in P and Q.
+  if P.n != Q.n:
+    raise ValueError(f'Cannot add polytopes of different dimensions ({P.n} and '
+                     f'{Q.n})')
+  # TODO: add more tests on P and Q (both non-empty? ...)
+  # TODO: find minimal V-reps? or should be up to caller?
+  # Vertices of the Minkowski sum:
+  msum_V = np.full((P.nV * Q.nV, P.n), np.nan, dtype=float)
+  for i_q, q in enumerate(Q.V): # TODO: loop over the smallest vertex set?
+    msum_V[i_q * P.nV : (i_q + 1) * P.nV, :] = P.V + q
+  P_plus_Q = Polytope(msum_V) # TODO: make this more compact with chaining?
+  P_plus_Q.minimal_V_rep()
+  return P_plus_Q
 
 def scale(P, s):
   # TODO: handle s == 0 specifically

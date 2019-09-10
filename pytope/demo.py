@@ -62,24 +62,46 @@ V9 = np.random.uniform((1, 2), (2, 3), (30, 2))
 P9 = Polytope(V9)
 P9.minimal_V_rep()
 
+# P10: the Minkowski sum of two squares (one large and one rotated and smaller)
+P10_1 = Polytope(lb=(-0.6, -0.6), ub=(0.6, 0.6))
+P10_2 = rot_mat7 * Polytope(lb=(-0.3, -0.3), ub=(0.3, 0.3))
+P10 = P10_1 + P10_2
+
 # Plot all of the polytopes.
 # See the matplotlib.patches.Polygon documentation for a list of valid kwargs
-fig, ax = plt.subplots()
+fig1, ax1 = plt.subplots(num=1)
 plt.grid()
 plt.axis([-1.5, 4.5, -2.5, 3.5])
-P1.plot(ax, fill=False, edgecolor='r', linewidth=2)
-P2.plot(ax, facecolor='g', edgecolor=(0, 0, 0), linewidth=1)
-P3.plot(ax, facecolor='b', edgecolor='k', linewidth=2, alpha=0.5)
-P4.plot(ax, facecolor='lightsalmon')
+P1.plot(ax1, fill=False, edgecolor='r', linewidth=2)
+P2.plot(ax1, facecolor='g', edgecolor=(0, 0, 0), linewidth=1)
+P3.plot(ax1, facecolor='b', edgecolor='k', linewidth=2, alpha=0.5)
+P4.plot(ax1, facecolor='lightsalmon')
 plt.scatter(P4.V[:, 0], P4.V[:, 1], c='k', marker='x')  # the vertices of P4
 # Polytope implements an additional keyword edgealpha:
-P5.plot(ax, fill=False, edgecolor='b', linewidth=8, edgealpha=0.2)
+P5.plot(ax1, fill=False, edgecolor='b', linewidth=8, edgealpha=0.2)
 plt.plot(P5.centroid[0], P5.centroid[1], 'o')  # the centroid of P5
-P6.plot(ax, facecolor='g', edgecolor=(0, 0, 0), linewidth=1)
-P7.plot(ax, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
+P6.plot(ax1, facecolor='g', edgecolor=(0, 0, 0), linewidth=1)
+P7.plot(ax1, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
         linewidth=1, edgealpha=0.3)
-P8.plot(ax, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
+P8.plot(ax1, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
         linewidth=1, edgealpha=0.3)
-P9.plot(ax, facecolor='gray', alpha=0.6, edgecolor='k')
+P9.plot(ax1, facecolor='gray', alpha=0.6, edgecolor='k')
 plt.plot(V9[:, 0], V9[:, 1], 'or', marker='o', markersize=2) # random points
 plt.plot(P9.V[:, 0], P9.V[:, 1], 'og', marker='o', markersize=1) # P9's vertices
+plt.title('Demonstration of various polytope operations')
+
+# Plot the Minkowski sum of two squares
+fig2, ax2 = plt.subplots(num=2)
+plt.grid()
+plt.axis([-2.5, 2.5, -2.5, 2.5])
+P10_1.plot(ax2, fill=False, edgecolor=(1, 0, 0))
+P10_2.plot(ax2, fill=False, edgecolor=(0, 0, 1))
+P10.plot(ax2, fill=False,
+         edgecolor=(1, 0, 1), linestyle='--', linewidth=2)
+for p in P10_1.V: # the smaller square + each of the vertices of the larger one
+  (P10_2 + p).plot(ax2, facecolor='grey', alpha=0.4,
+                   edgecolor='k', linewidth=0.5)
+ax2.legend((r'$P$', r'$Q$', r'$P \oplus Q$'))
+plt.title('Minkowski sum of two polytopes')
+
+plt.setp([ax1, ax2], xlabel=r'$x_1$', ylabel=r'$x_2$')

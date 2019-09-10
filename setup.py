@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(name='pytope',
-      version='0.0.2',
+      version='0.0.3',
       description='Polytope operations --- minimal functionality',
       url='https://github.com/heirung/pytope',
       author='Tor Aksel N. Heirung',
