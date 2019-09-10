@@ -18,7 +18,7 @@ Figure: Illustration of various polytope operations.
 ![The Minkowski sum of two polytopes](docs/minkowski_sum.png)
 Figure: The Minkowski sum of two polytopes.
 
-![Illustration of various polytope operations](docs/Mayne_2005.png)
+![Robust MPC trajectory from Mayne et al. (2005)](docs/Mayne_2005.png)
 Figure: Robust MPC trajectory from Mayne et al. (2005), combining Figures 1 and 2.
 
 
