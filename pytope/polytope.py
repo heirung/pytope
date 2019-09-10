@@ -1,6 +1,7 @@
 import numpy as np
 import cdd # pycddlib -- for vertex enumeration from H-representation
 from scipy.spatial import ConvexHull  # for finding A, b from V-representation
+import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
 class Polytope:
@@ -317,13 +318,15 @@ class Polytope:
     i_V_minimal = ConvexHull(self.V).vertices
     self.V = self.V[i_V_minimal, :]
 
-  def plot(self, ax, **kwargs):
+  def plot(self, ax=None, **kwargs):
     # Plot Polytope. Add separate patches for the fill and the edge, so that
     # the fill is below the gridlines (at zorder 0.4) and the edge edge is
     # above (at zorder 2, same as regular plot). Gridlines are at zorder 1.5
     # by default and at  (1 is default), which is below gridlines, which are
     # at zorder 1.5 by default 0.5 if setting ax.set_axisbelow(True),
     # so plotting the fill at 0.4 ensures the fill is always below the grid.
+    if not ax:
+      ax = plt.gca()
     h_patch = [] # handle, return as tuple
     V_sorted = self.V_sorted()
     # Check for edgecolor. Default is (0, 0, 0, 0), with the fourth 0 being
