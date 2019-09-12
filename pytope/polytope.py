@@ -334,6 +334,17 @@ class Polytope:
     i_V_minimal = ConvexHull(self.V).vertices
     self.V = self.V[i_V_minimal, :]
 
+  def support(self, eta):
+    # The support function of the polytope P, evaluated at (or in the
+    # direction) eta in R^n:
+    #   h_P(eta) = sup eta' * u   s.t.   u in P
+    # See Eq. (1.11) in Kolmanovsky & Gilbert (1998), "Theory and computation of
+    # disturbance  invariant sets for discrete-time linear systems."
+    # Mathematical Problems in Engineering, 4(4), 317–367.
+    result = solve_lp(-eta, A_ub=self.A, b_ub=self.b, bounds=(-np.inf, np.inf))
+    h_P_eta = -result.fun  # the support is the optimal objective-function value
+    return h_P_eta, result
+
   def plot(self, ax=None, **kwargs):
     # Plot Polytope. Add separate patches for the fill and the edge, so that
     # the fill is below the gridlines (at zorder 0.4) and the edge edge is
