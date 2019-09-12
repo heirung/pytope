@@ -4,7 +4,8 @@ Minimal package for operations on polytopes, zonotopes, and invariant sets.
 The currently implemented features include 
 * constructing polytopes from inequalites (halfspace representation), vertices, and upper and lower bounds, 
 * linear mapping (multiplying a matrix M and a polytope P: M * P), 
-* the Minkowski sum of polytopes, and
+* the Minkowski sum and Pontryagin difference of polytopes, 
+* the intersection of polytopes, and
 * simple plotting. 
 
 The figures below are generated with pytope. 
