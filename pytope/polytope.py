@@ -429,6 +429,31 @@ def linear_map(M, P):
   # TODO: M_P = Polytope(P.V @ M.T), if P.in_H_rep: M_P.determine_H_rep()?
   return Polytope(P.V @ M.T)
 
+def redundant_inequalities(A, b):
+  # Identify redundant inequalities (rows) in A*x <= b. Determine the pair
+  # (A, b) with the minimal number of rows and return which inequalities that
+  # are removed to reduce the input (A, b) to the minimal pair. See Komei
+  # Fukuda's polytope FAQ for an explanation of the redundancy test:
+  # http://www.cs.mcgill.ca/~fukuda/download/paper/polyfaq.pdf Returns: -
+  # removed: bool array with True at every redundant constraint
+  m, n = A.shape
+  # Add I to b so that column j of the resulting matrix is b + e_j (unit vector)
+  b_plus_1 = np.array(np.squeeze(b), dtype=float)[:, np.newaxis] + np.eye(m)
+  x_bounds = (-np.inf, np.inf)  # 0 <= x is the default in SciPy's linprog
+  removed = np.full(m, False)  # use to index A and b as LP constraints
+  # TODO first remove inequalites with all 0s in row i of A or infinity in b_i
+  for ineq in range(m):
+    lp_result = solve_lp(-A[ineq, :], A_ub=A[~removed, :],
+                         b_ub=b_plus_1[~removed, ineq], bounds=x_bounds)
+    if not lp_result.success:
+      print(f'Tested inequality {ineq}: {lp_result.message}')
+    # The constraint a_i' * x <= b is redundant iff a_i' * x <= b_i at the
+    # solution (the maximum of a_i * x, which is -lp_result.fun). Test that
+    # -lp_result.fun <= b_i with a tolerance (use numpy's standard atol, rtol):
+    if -lp_result.fun <= b[ineq] or np.isclose(-lp_result.fun, b[ineq]):
+      removed[ineq] = True
+  return removed
+
 def solve_lp(c, solver='linprog', *args, **kwargs):
   # Wrapper for various LP solvers (currently only scipy.optimize.linprog).
   if solver.lower() == 'linprog':
