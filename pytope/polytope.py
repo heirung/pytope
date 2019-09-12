@@ -222,6 +222,13 @@ class Polytope:
   def __bool__(self): # return True if the polytope is not empty
     return self.in_V_rep or self.in_H_rep
 
+  def __and__(self, other): # return the intersection of self and other
+    if isinstance(other, Polytope):
+      return intersection(self, other)
+    else:
+      raise NotImplementedError('Intersection implemented for two polytopes '
+                                'only')
+
   def __neg__(self):
     neg_P = Polytope()
     if self.in_V_rep:
@@ -436,6 +443,17 @@ def linear_map(M, P):
   # TODO: implement linear map in H-rep for invertible M
   # TODO: M_P = Polytope(P.V @ M.T), if P.in_H_rep: M_P.determine_H_rep()?
   return Polytope(P.V @ M.T)
+
+def intersection(P, Q):
+  # Set intersection of the polytopes P and Q. P_i_Q: P intersection Q
+  # Combine the H-representation of both polytopes:
+  P_i_Q_A = np.vstack((P.A, Q.A))
+  P_i_Q_b = np.vstack((P.b, Q.b))
+  # Determine which inequalites are redundant, if any:
+  redundant = redundant_inequalities(P_i_Q_A, P_i_Q_b)
+  # Create the intersection P_i_Q from the inequalities that are not redundant:
+  P_i_Q = Polytope(P_i_Q_A[~redundant], P_i_Q_b[~redundant])
+  return P_i_Q
 
 def redundant_inequalities(A, b):
   # Identify redundant inequalities (rows) in A*x <= b. Determine the pair
