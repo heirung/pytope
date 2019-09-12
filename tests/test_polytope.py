@@ -176,5 +176,29 @@ class TestPolytope(unittest.TestCase):
     self.assertTrue(P.nV == V_minimal.shape[0])
     self.assertTrue(np.allclose(P.V_sorted(), P_min.V_sorted()))
 
+  def test_minimize_H_rep(self):
+    # Create a polytope from with four redundant constraints. The non-redundant
+    # constraints specify a square with vertices (+- 1, -+ 1), the redundant
+    # constraints an outer square with vertices (+- 2, -+ 2). Check that the
+    # polytope first is specified with eight halfspaces, minimize the H-rep and
+    # verify the number goes down to four (corresponding to the inner square),
+    # and finally check that the correct (outer) halfspaces are removed from the
+    # inequality set.
+    n = 2
+    lb_inner = np.array([[-1, -1]]).T
+    ub_inner = -lb_inner
+    A_inner = np.vstack((-np.eye(n), np.eye(n)))
+    b_inner = np.vstack((-lb_inner, ub_inner))
+    H_inner = np.hstack((A_inner, b_inner))
+    A_outer = A_inner
+    b_outer = 2 * b_inner
+    A = np.vstack((A_inner, A_outer))
+    b = np.vstack((b_inner, b_outer))
+    P = Polytope(A, b)
+    self.assertTrue(P.H.shape[0] == 8)
+    P.minimize_H_rep()
+    self.assertTrue(P.H.shape[0] == H_inner.shape[0] == 4)
+    self.assertTrue(all(h in H_inner for h in P.H))
+
 if __name__ == '__main__':
   unittest.main()

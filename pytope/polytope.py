@@ -312,6 +312,13 @@ class Polytope:
       V = np.empty((0, self.n))
     self._set_V(V)
 
+  def minimize_H_rep(self):
+    # Minimize the number of halfspaces used to represent the polytope P by
+    # removing redundant inequalities (rows) in A*x <= b. Determine the pair
+    # (A, b) with the minimal number of rows and set self.A and self.b.
+    redundant = redundant_inequalities(self.A, self.b)  # bool array
+    self._set_Ab(self.A[~redundant], self.b[~redundant])  # TODO redesign _set
+
   def minimize_V_rep(self):
     # Minimize the number of vertices used to represent the polytope by removing
     # redundant points from the vertex list.
