@@ -248,8 +248,7 @@ class Polytope:
 
   def __sub__(self, other):
     if isinstance(other, Polytope):
-      raise NotImplementedError('Pontryagin difference of two polytopes not '
-                                'implemented')
+      return pontryagin_difference(self, other)
     else:
       return P_plus_p(self, other, subtract_p=True)
 
@@ -434,6 +433,21 @@ def minkowski_sum(P, Q):
   P_plus_Q.minimize_V_rep()
   return P_plus_Q
 
+def pontryagin_difference(P, Q):
+  # Pontryagin difference for two convex polytopes P and Q:
+  # P - Q = {x in R^n : x + q in P, for all q in Q}
+  # In halfspace representation, this is [P.A, P.b - Q.support(P.A)], with
+  # Q.support(P.A) a matrix in which row i is the support of Q at row i of P.A.
+  m = P.A.shape[0]
+  pdiff_b = np.full(m, np.nan)  # b vector in the Pontryagin difference P - Q
+  # For each inequality i in P: subtract the support of Q in the direction P.A_i
+  for ineq in range(m):
+    pdiff_b[ineq] = P.b[ineq] - Q.support(P.A[ineq])[0]  # TODO: error check [1]
+  # Determine which inequalites are redundant, if any:
+  redundant = redundant_inequalities(P.A, pdiff_b)
+  pdiff = Polytope(P.A[~redundant], pdiff_b[~redundant]) # minimal H-rep
+  return pdiff
+
 def scale(P, s):
   # TODO: handle s == 0 specifically
   P_scaled = Polytope()
@@ -457,6 +471,7 @@ def linear_map(M, P):
 
 def intersection(P, Q):
   # Set intersection of the polytopes P and Q. P_i_Q: P intersection Q
+  # TODO: improve handling of empty intersections
   # Combine the H-representation of both polytopes:
   P_i_Q_A = np.vstack((P.A, Q.A))
   P_i_Q_b = np.vstack((P.b, Q.b))

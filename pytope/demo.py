@@ -104,6 +104,7 @@ for p in P10_1.V: # the smaller square + each of the vertices of the larger one
 ax2.legend((r'$P$', r'$Q$', r'$P \oplus Q$'))
 plt.title('Minkowski sum of two polytopes')
 
+# Plot two rotated rectangles and their intersection
 rot1 = -np.pi / 18.0
 rot_mat1 = np.array([[np.cos(rot1), -np.sin(rot1)],
                      [np.sin(rot1), np.cos(rot1)]])
@@ -113,14 +114,28 @@ rot_mat2 = np.array([[np.cos(rot2), -np.sin(rot2)],
 P_i1 = rot_mat1 * Polytope(lb=(-2,-1),ub=(1,1))
 P_i2 = rot_mat2 * Polytope(lb=(0,0),ub=(2,2))
 P_i = P_i1 & P_i2  # intersection
-fig3, ax3 = plt.subplots(num=4)
+fig3, ax3 = plt.subplots(num=3)
 plt.grid()
 plt.axis([-3.5, 3.5, -3.5, 3.5])
 P_i1.plot(fill=False, edgecolor=(1, 0, 0), linestyle='--')
 P_i2.plot(fill=False, edgecolor=(0, 0, 1), linestyle='--')
 P_i.plot(fill=False,
          edgecolor=(1, 0, 1), linestyle='-', linewidth=2)
-ax3.legend((r'$P$', r'$Q$', r'$P cap Q$'))
+ax3.legend((r'$P$', r'$Q$', r'$P \cap Q$'))
 plt.title('Intersection of two polytopes')
 
-plt.setp([ax1, ax2, ax3], xlabel=r'$x_1$', ylabel=r'$x_2$')
+# Plot two polytopes and their Pontryagin difference
+P_m1 = Polytope(lb=(-3, -3), ub=(3, 3))
+P_m2 = Polytope([[1, 0], [0, -1], [-1, 0], [0, 1]])
+P_diff = P_m1 - P_m2
+fig4, ax4 = plt.subplots(num=4)
+plt.grid()
+plt.axis([-3.5, 3.5, -3.5, 3.5])
+P_m1.plot(fill=False, edgecolor=(1, 0, 0))
+P_m2.plot(fill=False, edgecolor=(0, 0, 1))
+P_diff.plot(fill=False,
+            edgecolor=(1, 0, 1), linestyle='--', linewidth=2)
+ax4.legend((r'$P$', r'$Q$', r'$P \ominus Q$'))
+plt.title('Pontryagin difference of two polytopes')
+
+plt.setp([ax1, ax2, ax3, ax4], xlabel=r'$x_1$', ylabel=r'$x_2$')
