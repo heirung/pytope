@@ -312,8 +312,9 @@ class Polytope:
       V = np.empty((0, self.n))
     self._set_V(V)
 
-  def minimal_V_rep(self):
-    # Remove redundant points from the vertex list.
+  def minimize_V_rep(self):
+    # Minimize the number of vertices used to represent the polytope by removing
+    # redundant points from the vertex list.
     # TODO: find and account for cases where this does not work
     # Indices of the unique vertices forming the convex hull:
     i_V_minimal = ConvexHull(self.V).vertices
@@ -405,7 +406,7 @@ def minkowski_sum(P, Q):
   for i_q, q in enumerate(Q.V): # TODO: loop over the smallest vertex set?
     msum_V[i_q * P.nV : (i_q + 1) * P.nV, :] = P.V + q
   P_plus_Q = Polytope(msum_V) # TODO: make this more compact with chaining?
-  P_plus_Q.minimal_V_rep()
+  P_plus_Q.minimize_V_rep()
   return P_plus_Q
 
 def scale(P, s):

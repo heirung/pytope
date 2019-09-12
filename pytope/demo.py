@@ -60,7 +60,7 @@ P8 = -P6
 # P9: The convex hull of a set of 30 random points in [2, 1]' <= x [3, 2]'
 V9 = np.random.uniform((1, 2), (2, 3), (30, 2))
 P9 = Polytope(V9)
-P9.minimal_V_rep()
+P9.minimize_V_rep()
 
 # P10: the Minkowski sum of two squares (one large and one rotated and smaller)
 P10_1 = Polytope(lb=(-0.6, -0.6), ub=(0.6, 0.6))

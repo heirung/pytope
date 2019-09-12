@@ -172,7 +172,7 @@ class TestPolytope(unittest.TestCase):
     P_min = Polytope(V_minimal)
     P = Polytope(V)
     self.assertTrue(P.nV == V.shape[0])
-    P.minimal_V_rep()
+    P.minimize_V_rep()
     self.assertTrue(P.nV == V_minimal.shape[0])
     self.assertTrue(np.allclose(P.V_sorted(), P_min.V_sorted()))
 
