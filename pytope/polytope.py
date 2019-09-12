@@ -1,6 +1,7 @@
 import numpy as np
 import cdd # pycddlib -- for vertex enumeration from H-representation
 from scipy.spatial import ConvexHull  # for finding A, b from V-representation
+from scipy.optimize import linprog  # for support, projection, and more
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
@@ -218,7 +219,7 @@ class Polytope:
   def __str__(self):
     return f'Polytope in R^{self.n}'
 
-  def __bool__(self): # return true if the polytope is not empty
+  def __bool__(self): # return True if the polytope is not empty
     return self.in_V_rep or self.in_H_rep
 
   def __neg__(self):
@@ -390,7 +391,8 @@ def P_plus_p(P, point, subtract_p=False):
   return P_shifted
 
 def minkowski_sum(P, Q):
-  # Minkowski sum of two convex polytopes P and Q: {p + q | p in P, q in Q}.
+  # Minkowski sum of two convex polytopes P and Q:
+  # P + Q = {p + q in R^n : p in P, q in Q}.
   # In vertex representation, this is the convex hull of the pairwise sum of all
   # combinations of points in P and Q.
   if P.n != Q.n:
@@ -426,3 +428,14 @@ def linear_map(M, P):
   # TODO: implement linear map in H-rep for invertible M
   # TODO: M_P = Polytope(P.V @ M.T), if P.in_H_rep: M_P.determine_H_rep()?
   return Polytope(P.V @ M.T)
+
+def solve_lp(c, solver='linprog', *args, **kwargs):
+  # Wrapper for various LP solvers (currently only scipy.optimize.linprog).
+  if solver.lower() == 'linprog':
+    kwargs['method'] = 'revised simplex'
+    result = linprog(c, **kwargs)
+    if not result.success:
+      print({result.message})
+  else:
+    raise NotImplementedError(f'Support for solver {solver} not implemented')
+  return result

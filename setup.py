@@ -11,7 +11,7 @@ setup(name='pytope',
       packages=['pytope'],
       install_requires=[
         'numpy',
-        'scipy',
+        'scipy>=1.3.0',  # 1.3.0 for the reflective-simplex option in linprog()
         'pycddlib',
         'matplotlib'
       ],
