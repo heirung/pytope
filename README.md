@@ -9,11 +9,11 @@ The currently implemented features include
 * simple plotting. 
 
 The figures below are generated with pytope. 
-The first two illustrate the currently implemented operations (see [demo.py](https://github.com/heirung/pytope/blob/master/pytope/demo.py)); 
-the third uses pytope to plot a robust MPC trajectory (implemented in [CasADi](https://github.com/casadi), combining Figures 1 and 2 from Mayne et al. (2005)) (with a rough approximation of the disturbance sequence); 
-the fourth shows an outer *&epsilon;*-approximation of a minimal robust positively invariant (or MRPI) set (computed with pytope), reproducing the example from Raković et al. (2005).  
+The first two illustrate some of the currently implemented operations (see [demo.py](https://github.com/heirung/pytope/blob/master/pytope/demo.py)); 
+the third uses pytope to plot a robust MPC trajectory (obtained with [CasADi](https://github.com/casadi)), combining Figures 1 and 2 from Mayne et al. (2005) with a rough approximation of the disturbance sequence; 
+the fourth shows an outer *&epsilon;*-approximation of a minimal robust positively invariant, or MRPI, set computed with pytope, reproducing the example from Raković et al. (2005).  
 
-Most of pytope is experimental, fragile, largely untested, and buggy.
+pytope is experimental, fragile, largely untested, and probably buggy.
 
 ![Illustration of various polytope operations](https://raw.githubusercontent.com/heirung/pytope/master/docs/various_operations.svg?sanitize=true)  
 Figure: Illustration of various polytope operations.
