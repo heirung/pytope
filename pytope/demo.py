@@ -57,7 +57,7 @@ P7 = rot_mat7 * P2
 # P8: -P6
 P8 = -P6
 
-# P9: The convex hull of a set of 30 random points in [2, 1]' <= x [3, 2]'
+# P9: The convex hull of a set of 30 random points in [1, 2]' <= x [2, 3]'
 V9 = np.random.uniform((1, 2), (2, 3), (30, 2))
 P9 = Polytope(V9)
 P9.minimize_V_rep()

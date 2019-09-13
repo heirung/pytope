@@ -1,9 +1,13 @@
 from setuptools import setup
 
+with open('README.md', 'r') as fh:
+  long_description = fh.read()
 
 setup(name='pytope',
-      version='0.0.3',
-      description='Polytope operations --- minimal functionality',
+      version='0.0.4',
+      description='Polytope operations --- limited functionality',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       url='https://github.com/heirung/pytope',
       author='Tor Aksel N. Heirung',
       author_email='github@torheirung.com',
@@ -15,4 +19,5 @@ setup(name='pytope',
         'pycddlib',
         'matplotlib'
       ],
+      python_requires='>=3.6',
       zip_safe=False)
