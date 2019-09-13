@@ -15,16 +15,16 @@ the fourth shows an outer *&epsilon;*-approximation of a minimal robust positive
 
 Most of pytope is experimental, fragile, largely untested, and buggy.
 
-![Illustration of various polytope operations](https://raw.githubusercontent.com/heirung/pytope/master/docs/various_operations.svg)  
+![Illustration of various polytope operations](https://raw.githubusercontent.com/heirung/pytope/master/docs/various_operations.svg?sanitize=true)  
 Figure: Illustration of various polytope operations.
 
-![The Minkowski sum of two polytopes](https://raw.githubusercontent.com/heirung/pytope/master/docs/minkowski_sum.svg)  
+![The Minkowski sum of two polytopes](https://raw.githubusercontent.com/heirung/pytope/master/docs/minkowski_sum.svg?sanitize=true)  
 Figure: The Minkowski sum of two polytopes.
 
-![Robust MPC trajectory from Mayne et al. (2005)](https://raw.githubusercontent.com/heirung/pytope/master/docs/Mayne_2005.svg)  
+![Robust MPC trajectory from Mayne et al. (2005)](https://raw.githubusercontent.com/heirung/pytope/master/docs/Mayne_2005.svg?sanitize=true)  
 Figure: Robust MPC trajectory from Mayne et al. (2005), combining Figures 1 and 2.
 
-![Outer *&epsilon;*-approximation of a minimal RPI](https://raw.githubusercontent.com/heirung/pytope/master/docs/Rakovic_2005.svg)  
+![Outer *&epsilon;*-approximation of a minimal RPI](https://raw.githubusercontent.com/heirung/pytope/master/docs/Rakovic_2005.svg?sanitize=true)  
 Figure: Outer *&epsilon;*-approximation of a minimal robust positively invariant (MRPI) set – a reproduction of the example in Raković et al. (2005).
 
 ### References
