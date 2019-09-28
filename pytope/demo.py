@@ -86,7 +86,7 @@ P7.plot(ax1, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
 P8.plot(ax1, facecolor='g', edgecolor=(0, 0, 0), alpha=0.3,
         linewidth=1, edgealpha=0.3)
 P9.plot(ax1, facecolor='gray', alpha=0.6, edgecolor='k')
-plt.plot(V9[:, 0], V9[:, 1], 'or', marker='o', markersize=2) # random points
+plt.plot(V9[:, 0], V9[:, 1], 'or', marker='o', markersize=2)  # random points
 plt.plot(P9.V[:, 0], P9.V[:, 1], 'og', marker='o', markersize=1) # P9's vertices
 plt.title('Demonstration of various polytope operations')
 
@@ -111,8 +111,8 @@ rot_mat1 = np.array([[np.cos(rot1), -np.sin(rot1)],
 rot2 = np.pi / 18.0
 rot_mat2 = np.array([[np.cos(rot2), -np.sin(rot2)],
                      [np.sin(rot2), np.cos(rot2)]])
-P_i1 = rot_mat1 * Polytope(lb=(-2,-1),ub=(1,1))
-P_i2 = rot_mat2 * Polytope(lb=(0,0),ub=(2,2))
+P_i1 = rot_mat1 * Polytope(lb=(-2, -1), ub=(1, 1))
+P_i2 = rot_mat2 * Polytope(lb=(0, 0), ub=(2, 2))
 P_i = P_i1 & P_i2  # intersection
 fig3, ax3 = plt.subplots(num=3)
 plt.grid()
@@ -139,3 +139,4 @@ ax4.legend((r'$P$', r'$Q$', r'$P \ominus Q$'))
 plt.title('Pontryagin difference of two polytopes')
 
 plt.setp([ax1, ax2, ax3, ax4], xlabel=r'$x_1$', ylabel=r'$x_2$')
+

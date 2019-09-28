@@ -9,12 +9,21 @@ class Polytope:
 
   def __init__(self, *args, **kwargs):
 
-    self.n = 0
+    # Set n = 0 if constructed as Polytope() or without n as a kwarg:
+    n = 0 if not (args or kwargs) else kwargs.get('n', 0)
+
+    # Check if the constructor was called to create an empty Polytope in R^n --
+    # Polytope(n=n). This is only allowed if n is the only argument.
+    if 'n' in kwargs and (args or len(kwargs) > 1):
+        raise ValueError('Cannot set dimension n with other arguments')
+
+    # Set some defaults, potentially changed below:
+    self.n = n
     self.in_H_rep = False
     self.in_V_rep = False
-    self._A = np.empty((0, self.n))
+    self._A = np.empty((0, n))
     self._b = np.empty((0, 1))
-    self._V = np.empty((0, self.n))
+    self._V = np.empty((0, n))
 
     # Check how the constructor was called. TODO: account for V=None, V=[],
     # or similar
@@ -87,8 +96,6 @@ class Polytope:
   def _get_A(self):
     if not self.in_H_rep and self.in_V_rep:
       self.determine_H_rep()
-      # if self._A.shape[0] == 0: # A is empty, ensure it has correct dimension
-      #   self._A = np.empty((0, self.n))
     return self._A
 
   def _get_V(self):
@@ -206,8 +213,10 @@ class Polytope:
     return self.V[order, :]
 
   def __repr__(self):  # TODO: does not print nicely for list of Polytopes
-    r = ['Polytope ']
-    r += ['(empty)' if self.n == 0 else f'in R^{self.n}']
+    r = [type(self).__name__]
+    if not self:  # bool(self) = self.in_V_rep or self.in_H_rep
+      r += [' (empty)']
+    r += [f' in R^{self.n}']
     if self.in_H_rep:
       ineq_spl = 'inequalities' if self.A.shape[0] != 1 else 'inequality'
       r += [f'\n\tIn H-rep: {self.A.shape[0]} {ineq_spl}']
@@ -217,14 +226,20 @@ class Polytope:
     return ''.join(r)
 
   def __str__(self):
-    return f'Polytope in R^{self.n}'
+    return type(self).__name__ + f' in R^{self.n}'
 
   def __bool__(self): # return True if the polytope is not empty
     return self.in_V_rep or self.in_H_rep
 
   def __and__(self, other): # return the intersection of self and other
     if isinstance(other, Polytope):
-      return intersection(self, other)
+      # The intersection of an (empty) set with an empty set is an empty set, so
+      # in this case, return an empty polytope of with dimension set to the
+      # smaller of self.n and other.n (arbitrary choice).
+      if not (self and other):
+        return Polytope(n=min(self.n, other.n))
+      else:
+        return intersection(self, other)
     else:
       raise NotImplementedError('Intersection implemented for two polytopes '
                                 'only')
@@ -239,8 +254,15 @@ class Polytope:
 
   def __add__(self, other):
     if isinstance(other, Polytope):
-      return minkowski_sum(self, other)
+      # The Minkowski sum of one non-empty and one empty polytope is the
+      # non-empty polytope, so if one polytope is empty, return self (which can
+      # be the empty one, possibly of different dimension than other):
+      if not (self and other):
+        return self._copy() if self else other._copy()
+      else:  # compute the Minkowski sum when neither is empty
+        return minkowski_sum(self, other)
     else:
+      # TODO: handle zero vectors in a similar way (although now minimal overh.)
       return P_plus_p(self, other)
 
   def __radd__(self, other):
@@ -248,8 +270,15 @@ class Polytope:
 
   def __sub__(self, other):
     if isinstance(other, Polytope):
-      return pontryagin_difference(self, other)
+      # The Pontryagin difference of one non-empty and one empty polytope is
+      # the non-empty polytope, so if one polytope is empty, return self (which
+      #  can be the empty one, possibly of different dimension than other):
+      if not (self and other):
+        return self._copy() if self else other._copy()
+      else:  # compute the Pontryagin difference when neither is empty
+        return pontryagin_difference(self, other)
     else:
+      # TODO: handle zero vectors in a similar way (although now minimal overh.)
       return P_plus_p(self, other, subtract_p=True)
 
   # def __rsub__(self, other):  # p - P -- raise TypeError (not well defined)
@@ -262,6 +291,15 @@ class Polytope:
   def __rmul__(self, other):
     # other * self: scaling if other is scalar, linear map if other is a matrix.
     return self.multiply(other)
+
+  def _copy(self):  # quick and dirty copy method
+    # TODO: make proper ones (shallow and deep)
+    P_copy = Polytope()
+    if self.in_H_rep:
+      P_copy._set_Ab(self.A, self.b)  # TODO: redesign this
+    if self.in_V_rep:
+      P_copy.V = self.V
+    return P_copy
 
   def multiply(self, other, inverse=False):
     # scale: s * P or P * s with s a scalar and P a polytope
@@ -421,8 +459,8 @@ def minkowski_sum(P, Q):
   # In vertex representation, this is the convex hull of the pairwise sum of all
   # combinations of points in P and Q.
   if P.n != Q.n:
-    raise ValueError(f'Cannot add polytopes of different dimensions ({P.n} and '
-                     f'{Q.n})')
+    raise ValueError(f'Minkowski sum of polytopes of different dimensions '
+                     f'({P.n} and {Q.n}) not allowed')
   # TODO: add more tests on P and Q (both non-empty? ...)
   # TODO: find minimal V-reps? or should be up to caller?
   # Vertices of the Minkowski sum:
@@ -438,6 +476,9 @@ def pontryagin_difference(P, Q):
   # P - Q = {x in R^n : x + q in P, for all q in Q}
   # In halfspace representation, this is [P.A, P.b - Q.support(P.A)], with
   # Q.support(P.A) a matrix in which row i is the support of Q at row i of P.A.
+  if P.n != Q.n:
+    raise ValueError(f'Pontryagin difference of polytopes of different '
+                     f'dimensions ({P.n} and {Q.n}) not allowed')
   m = P.A.shape[0]
   pdiff_b = np.full(m, np.nan)  # b vector in the Pontryagin difference P - Q
   # For each inequality i in P: subtract the support of Q in the direction P.A_i
@@ -449,7 +490,7 @@ def pontryagin_difference(P, Q):
   return pdiff
 
 def scale(P, s):
-  # TODO: handle s == 0 specifically
+  # TODO: handle s == 0 and s == 1 separately
   P_scaled = Polytope()
   if P.in_H_rep:
     P_scaled._set_Ab(P.A, P.b * s)  # TODO: redesign this
