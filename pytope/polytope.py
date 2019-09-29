@@ -308,11 +308,11 @@ class Polytope:
     if isinstance(other, Polytope):
       raise NotImplementedError('Product of two polytopes not implemented')
     # TODO: now assuming a numeric type that can be squeezed -- fix
-    # other can be a scalar (ndim=0) or a matrix (ndim=2)
+    # other can be a scalar (ndim=0), a vector (ndim=1), or a matrix (ndim=2)
     factor = np.squeeze(other)
     if factor.ndim == 0:
       return scale(self, other)
-    elif factor.ndim == 2:
+    elif factor.ndim in [1, 2]:
       if inverse:
         raise NotImplementedError('Inverse linear map P * M not implemeted')
       else:
