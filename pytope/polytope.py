@@ -1,9 +1,10 @@
 import numpy as np
-import cdd # pycddlib -- for vertex enumeration from H-representation
+import cdd  # pycddlib -- for vertex enumeration from H-representation
 from scipy.spatial import ConvexHull  # for finding A, b from V-representation
 from scipy.optimize import linprog  # for support, projection, and more
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
+
 
 class Polytope:
 
@@ -15,7 +16,7 @@ class Polytope:
     # Check if the constructor was called to create an empty Polytope in R^n --
     # Polytope(n=n). This is only allowed if n is the only argument.
     if 'n' in kwargs and (args or len(kwargs) > 1):
-        raise ValueError('Cannot set dimension n with other arguments')
+      raise ValueError('Cannot set dimension n with other arguments')
 
     # Set some defaults, potentially changed below:
     self.n = n
@@ -24,6 +25,7 @@ class Polytope:
     self._A = np.empty((0, n))
     self._b = np.empty((0, 1))
     self._V = np.empty((0, n))
+    self._dim = None  # unknown
 
     # Check how the constructor was called. TODO: account for V=None, V=[],
     # or similar
@@ -37,7 +39,7 @@ class Polytope:
     if (V_or_R_passed or A_and_b_passed) and lb_or_ub_passed:
       raise ValueError('Cannot specify bounds in addition to V, R, A, or b')
 
-    if ('A' in kwargs) ^ ('b' in kwargs): # XOR
+    if ('A' in kwargs) ^ ('b' in kwargs):  # XOR
       raise ValueError('Cannot pass just one of A and b as keywords')
 
     # Parse V if passed as the only positional argument or as a keyword
@@ -47,7 +49,7 @@ class Polytope:
         # Prevent passing vertex lists as first positional argument and as
         # keyword, as in P = Polytope(V_list1, V=V_list2):
         if V is not None:
-          raise ValueError('V cannot be passed as the first argument and as a ' 
+          raise ValueError('V cannot be passed as the first argument and as a '
                            'keyword')
         V = args[0]  # The first positional argument is V
       # Parse R if passed as keyword
@@ -97,11 +99,6 @@ class Polytope:
     if not self.in_H_rep and self.in_V_rep:
       self.determine_H_rep()
     return self._A
-
-  def _get_V(self):
-    if not self.in_V_rep and self.in_H_rep:
-        self.determine_V_rep()
-    return self._V
 
   def _set_A(self, A):  # careful if setting A independent of b
     self._A = np.array(A, ndmin=2, dtype=float)  # prevents shape (n,) for m = 1
@@ -183,7 +180,7 @@ class Polytope:
 
   def _get_V(self):
     if not self.in_V_rep and self.in_H_rep:
-        self.determine_V_rep()
+      self.determine_V_rep()
     return self._V
 
   def _set_V(self, V):
@@ -195,11 +192,21 @@ class Polytope:
 
   @property
   def nV(self):
-    return self.V.shape[0] # determines V-rep if not determined
+    return self.V.shape[0]  # determines V-rep if not determined
 
   @property
   def centroid(self):
     return np.sum(self.V, axis=0) / self.nV
+
+  @property
+  def dim(self):
+    if self._dim is None:
+      self.determine_dim()
+    return self._dim
+
+  @property
+  def is_full_dimensional(self):
+    return self.dim == self.n
 
   def V_sorted(self):
     # Sort vertices (increasing angle: the point (x1, x2) = (1, 0) has angle 0).
@@ -207,7 +214,7 @@ class Polytope:
     # sorted clockwise from 9:00 (angle pi). Note that the first argument is y.
     # Mainly for plotting and not implemented for n != 2.
     if self.n != 2:
-      raise  NotImplementedError('V_sorted() not implemented for n != 2')
+      raise NotImplementedError('V_sorted() not implemented for n != 2')
     c = self.centroid
     order = np.argsort(np.arctan2(self.V[:, 1] - c[1], self.V[:, 0] - c[0]))
     return self.V[order, :]
@@ -228,10 +235,10 @@ class Polytope:
   def __str__(self):
     return type(self).__name__ + f' in R^{self.n}'
 
-  def __bool__(self): # return True if the polytope is not empty
+  def __bool__(self):  # return True if the polytope is not empty
     return self.in_V_rep or self.in_H_rep
 
-  def __and__(self, other): # return the intersection of self and other
+  def __and__(self, other):  # return the intersection of self and other
     if isinstance(other, Polytope):
       # The intersection of an (empty) set with an empty set is an empty set, so
       # in this case, return an empty polytope of with dimension set to the
@@ -314,16 +321,19 @@ class Polytope:
       return scale(self, other)
     elif factor.ndim in [1, 2]:
       if inverse:
-        raise NotImplementedError('Inverse linear map P * M not implemeted')
+        raise NotImplementedError('Inverse linear map P * M not implemented')
       else:
         return linear_map(other, self)
     else:
-      raise NotImplementedError('Mulitplication with numeric type other than '
-                       'scalar and matrix not implemented')
+      raise NotImplementedError('Multiplication with numeric type other than '
+                                'scalar and matrix not implemented')
 
   def determine_H_rep(self):
     if not self.in_V_rep:
       raise ValueError('Cannot determine H representation: no V representation')
+    if not self.is_full_dimensional:  # TODO: fix this
+      raise NotImplementedError('Determining H-rep not implemented for '
+                                'polytopes that are not full-dimensional')
     H = ConvexHull(self.V).equations  # H = [A, -b]
     A, b_negative = np.split(H, [-1], axis=1)
     self._set_Ab(A, -b_negative)
@@ -345,7 +355,7 @@ class Polytope:
     # row vectors on top of s ray row vectors.
     P_tV = H_P.get_generators()  # type(P_tV):  <class 'cdd.Matrix'>
     tV = np.array(P_tV[:])
-    if tV.any(): # tV == [] if the Polytope is empty
+    if tV.any():  # tV == [] if the Polytope is empty
       V_rows = tV[:, 0] == 1  # bool array of which rows contain vertices
       R_rows = tV[:, 0] == 0  # and which contain rays (~ V_rows)
       V = tV[V_rows, 1:]  # array of vertices (one per row)
@@ -367,9 +377,26 @@ class Polytope:
     # Minimize the number of vertices used to represent the polytope by removing
     # redundant points from the vertex list.
     # TODO: find and account for cases where this does not work
-    # Indices of the unique vertices forming the convex hull:
-    i_V_minimal = ConvexHull(self.V).vertices
-    self.V = self.V[i_V_minimal, :]
+    # Qhull does not support degenerate polytopes (not full dimensional), such
+    # as lines in n = 2 amd planes in n = 3. ("QhullError: Raised when Qhull
+    # encounters an error condition, such as geometrical degeneracy when options
+    # to resolve are not enabled.")
+    if self.is_full_dimensional:
+      # Indices of the unique vertices forming the convex hull:
+      i_V_minimal = ConvexHull(self.V).vertices
+      self.V = self.V[i_V_minimal, :]
+    else:  # TODO: fix this
+      raise NotImplementedError('Determining V-rep not implemented for '
+                                'polytopes that are not full-dimensional')
+
+  def determine_dim(self):
+    # Determine the dimensionality of the polytope using the vertices.
+    # Subtract one vertex from the vertices so that the hyperplane that contains
+    # the shifted vertices passes through the origin (it is then a subspace):
+    V_subspace = self.V - self.V[0]  # subtract the first vertex
+    # The number of linearly independent vertices is the dimension of that
+    # subspace, and therefore the dimension of the polytope:
+    self._dim = np.linalg.matrix_rank(V_subspace)
 
   def support(self, eta):
     # The support function of the polytope P, evaluated at (or in the
@@ -391,7 +418,7 @@ class Polytope:
     # so plotting the fill at 0.4 ensures the fill is always below the grid.
     if not ax:
       ax = plt.gca()
-    h_patch = [] # handle, return as tuple
+    h_patch = []  # handle, return as tuple
     V_sorted = self.V_sorted()
     # Check for edgecolor. Default is (0, 0, 0, 0), with the fourth 0 being
     # alpha (0 is fully transparent). Passingedgecolor='r', e.g., later
@@ -426,7 +453,7 @@ class Polytope:
 
   def plot_basic(self, ax, **kwargs):
     h_patch = ax.add_patch(Polygon(self.V_sorted(), **kwargs))
-    return h_patch # handle to the patch
+    return h_patch  # handle to the patch
 
 
 def P_plus_p(P, point, subtract_p=False):
@@ -438,7 +465,7 @@ def P_plus_p(P, point, subtract_p=False):
   p = np.array(np.squeeze(point), dtype=float)[:, np.newaxis]
   if p.size != P.n or p.shape[1] != 1 or p.ndim != 2:  # ensure p is n x 1
     raise ValueError(f'The point must be a vector in R^{P.n}')
-  if subtract_p: p = -p # add -p if 'sub'
+  if subtract_p: p = -p  # add -p if 'sub'
   P_shifted = Polytope()
   # V-rep: The sum is all vertices of P shifted by p.
   # Not necessary to tile/repeat since p.T broadcasts, but could do something
@@ -453,6 +480,7 @@ def P_plus_p(P, point, subtract_p=False):
     P_shifted._set_Ab(P.A, P.b + P.A @ p)  # TODO: redesign this
   return P_shifted
 
+
 def minkowski_sum(P, Q):
   # Minkowski sum of two convex polytopes P and Q:
   # P + Q = {p + q in R^n : p in P, q in Q}.
@@ -465,11 +493,12 @@ def minkowski_sum(P, Q):
   # TODO: find minimal V-reps? or should be up to caller?
   # Vertices of the Minkowski sum:
   msum_V = np.full((P.nV * Q.nV, P.n), np.nan, dtype=float)
-  for i_q, q in enumerate(Q.V): # TODO: loop over the smallest vertex set?
-    msum_V[i_q * P.nV : (i_q + 1) * P.nV, :] = P.V + q
-  P_plus_Q = Polytope(msum_V) # TODO: make this more compact with chaining?
+  for i_q, q in enumerate(Q.V):  # TODO: loop over the smallest vertex set?
+    msum_V[i_q * P.nV: (i_q + 1) * P.nV, :] = P.V + q
+  P_plus_Q = Polytope(msum_V)  # TODO: make this more compact with chaining?
   P_plus_Q.minimize_V_rep()
   return P_plus_Q
+
 
 def pontryagin_difference(P, Q):
   # Pontryagin difference for two convex polytopes P and Q:
@@ -484,10 +513,11 @@ def pontryagin_difference(P, Q):
   # For each inequality i in P: subtract the support of Q in the direction P.A_i
   for ineq in range(m):
     pdiff_b[ineq] = P.b[ineq] - Q.support(P.A[ineq])[0]  # TODO: error check [1]
-  # Determine which inequalites are redundant, if any:
+  # Determine which inequalities are redundant, if any:
   redundant = redundant_inequalities(P.A, pdiff_b)
-  pdiff = Polytope(P.A[~redundant], pdiff_b[~redundant]) # minimal H-rep
+  pdiff = Polytope(P.A[~redundant], pdiff_b[~redundant])  # minimal H-rep
   return pdiff
+
 
 def scale(P, s):
   # TODO: handle s == 0 and s == 1 separately
@@ -497,6 +527,7 @@ def scale(P, s):
   if P.in_V_rep:
     P_scaled.V = P.V * s
   return P_scaled
+
 
 def linear_map(M, P):
   # Compute the linear map M * P through the vertex representation of V. If P
@@ -510,17 +541,19 @@ def linear_map(M, P):
   # TODO: M_P = Polytope(P.V @ M.T), if P.in_H_rep: M_P.determine_H_rep()?
   return Polytope(P.V @ M.T)
 
+
 def intersection(P, Q):
   # Set intersection of the polytopes P and Q. P_i_Q: P intersection Q
   # TODO: improve handling of empty intersections
   # Combine the H-representation of both polytopes:
   P_i_Q_A = np.vstack((P.A, Q.A))
   P_i_Q_b = np.vstack((P.b, Q.b))
-  # Determine which inequalites are redundant, if any:
+  # Determine which inequalities are redundant, if any:
   redundant = redundant_inequalities(P_i_Q_A, P_i_Q_b)
   # Create the intersection P_i_Q from the inequalities that are not redundant:
   P_i_Q = Polytope(P_i_Q_A[~redundant], P_i_Q_b[~redundant])
   return P_i_Q
+
 
 def redundant_inequalities(A, b):
   # Identify redundant inequalities (rows) in A*x <= b. Determine the pair
@@ -534,7 +567,7 @@ def redundant_inequalities(A, b):
   b_plus_1 = np.array(np.squeeze(b), dtype=float)[:, np.newaxis] + np.eye(m)
   x_bounds = (-np.inf, np.inf)  # 0 <= x is the default in SciPy's linprog
   removed = np.full(m, False)  # use to index A and b as LP constraints
-  # TODO first remove inequalites with all 0s in row i of A or infinity in b_i
+  # TODO: first remove inequalities with all 0s in row i of A or infinity in b_i
   for ineq in range(m):
     lp_result = solve_lp(-A[ineq, :], A_ub=A[~removed, :],
                          b_ub=b_plus_1[~removed, ineq], bounds=x_bounds)
@@ -546,6 +579,7 @@ def redundant_inequalities(A, b):
     if -lp_result.fun <= b[ineq] or np.isclose(-lp_result.fun, b[ineq]):
       removed[ineq] = True
   return removed
+
 
 def solve_lp(c, solver='linprog', *args, **kwargs):
   # Wrapper for various LP solvers (currently only scipy.optimize.linprog).

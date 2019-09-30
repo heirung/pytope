@@ -98,7 +98,7 @@ P10_1.plot(ax2, fill=False, edgecolor=(1, 0, 0))
 P10_2.plot(ax2, fill=False, edgecolor=(0, 0, 1))
 P10.plot(ax2, fill=False,
          edgecolor=(1, 0, 1), linestyle='--', linewidth=2)
-for p in P10_1.V: # the smaller square + each of the vertices of the larger one
+for p in P10_1.V:  # the smaller square + each of the vertices of the larger one
   (P10_2 + p).plot(ax2, facecolor='grey', alpha=0.4,
                    edgecolor='k', linewidth=0.5)
 ax2.legend((r'$P$', r'$Q$', r'$P \oplus Q$'))
