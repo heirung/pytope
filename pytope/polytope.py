@@ -263,6 +263,22 @@ class Polytope:
       neg_P._set_Ab(-self.A, self.b)
     return neg_P
 
+  def __eq__(self, other):
+    if isinstance(other, Polytope):
+      return self.contains(other) and other.contains(self)
+    else:
+      raise ValueError('Equivalence of polytope and non-polytope not defined')
+
+  def __le__(self, other):  # P <= other, other >= P
+    if isinstance(other, Polytope):
+      return other.contains(self)
+    else:
+      raise ValueError('The truth value of a polytope being a subset of a'
+                       'non-polytope is not defined')
+
+  def __ge__(self, other):  # P >= other, other <= P
+    return self.contains(other)
+
   def __add__(self, other):
     if isinstance(other, Polytope):
       # The Minkowski sum of one non-empty and one empty polytope is the
@@ -460,6 +476,50 @@ class Polytope:
     if not self.in_V_rep:
       self.determine_V_rep()
     return Polytope(self.V[:, dimensions])
+
+  def contains(self, Q):
+    # If Q is a polytope: check whether Q is a subset of P (self). The test
+    # is testing whether all vertices v of Q satisfy P.A * v <= P.b,
+    # requiring the V-rep of Q and the H-rep of P. If both polytopes are in
+    # H-rep, it is also straight forward to use the support function of Q for
+    # the subset test. Using the V-rep of P (self) is a little more
+    # complicated.
+    # If Q is one or more points: check whether they are contained within P.
+    if isinstance(Q, Polytope):  # P and Q are both polytopes
+      if Q.n == self.n:  # TODO: test for more edge cases
+        return all(self.contains(Q.V.T))  # can be extremely inefficient
+      else:
+        raise ValueError('Subset test of polytopes of different dimension not'
+                         'allowed')
+    else:
+      # If Q contains m > 1 points: Q needs to have shape (P.n, m). That is,
+      # each of the points is a column.
+      # If Q contains a single point, it can have any shape and be of any type
+      # that can be converted to an ndarray as below.
+      # Try to convert Q to an ndarray (raises ValueError if Q is not numeric):
+      x = np.atleast_2d(np.squeeze(Q).astype(float))  # x: one or more points
+      if x.shape[0] == 1:  # make x a column if it is single point (here a row)
+        x = x.T
+      elif x.shape[0] != self.n:
+        # Could transpose here if x.shape[1] == self.n, but better to specify
+        # that points must be columns:
+        raise ValueError(f'Testing if a polytope in R^{self.n} contains points'
+                         f'in R^{x.shape[0]} is not allowed: points must be '
+                         f'columns (transpose the input?)')
+      # Check whether P.A @ x <= P.b (with a tolerance) for (all) x. Iff that
+      # is the case, the points x are all contained in P. To test this, check
+      # for which x P.A @ x - P.b <= 0, with a tolerance, and return whether it
+      # holds for all x.
+      Ax_m_b = self.A @ x - self.b
+      # Test whether every point satisfies every inequality. The following gives
+      # an (P.n, x.shape[1] bool array:
+      x_contained = np.logical_or(Ax_m_b < 0, np.isclose(Ax_m_b, 0))
+      # Return an array of which points that satisfy every inequality, and are
+      # thus contained in P:
+      return np.all(x_contained, axis=0)
+
+
+
 
   def plot(self, ax=None, **kwargs):
     # Plot Polytope. Add separate patches for the fill and the edge, so that
