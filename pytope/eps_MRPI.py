@@ -167,7 +167,7 @@ def eps_MRPI(A, W, epsilon, s_max=20):
   eps_min = M[s_final] * alpha / (1 - alpha)
 
   result = {'alpha': alpha, 's': s_final, 'M': M[: s_final + 1],
-            'status': status, 'alpha_o_s': alpha_o_s[: s_final + 1], 'F_s' :F_s,
+            'status': status, 'alpha_o_s': alpha_o_s[: s_final + 1], 'F_s': F_s,
             'eps_min': eps_min}
 
   return F_alpha_s, result

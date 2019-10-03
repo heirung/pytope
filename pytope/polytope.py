@@ -118,7 +118,7 @@ class Polytope:
 
   def _set_b(self, b):  # Careful when setting b indep of A (use for scaling P)
     # Ensure np.hstack((A, b)) works by having b be a column vector
-    self._b = np.array(np.squeeze(b), dtype=float)[:, np.newaxis]
+    self._b = np.atleast_2d(np.squeeze(b).astype(float)).T
 
   @property
   def H(self):  # the matrix H = [A b]
@@ -132,7 +132,7 @@ class Polytope:
 
   def _set_Ab(self, A, b):
     A = np.array(A, ndmin=2)  # ndmin=2 prevents shape (n,) when m = 1
-    b = np.squeeze(b)[:, np.newaxis]  # overlaps with _set_b(b)
+    b = np.atleast_2d(np.squeeze(b).astype(float)).T  # overlaps with _set_b(b)
     m, n = A.shape
     if b.shape[0] != m:
       raise ValueError(f'A has {m} rows; b has {b.shape[0]} rows!')
@@ -213,6 +213,10 @@ class Polytope:
     # np.arctan2(y, x) returns angles in the range [-pi, pi], so vertices are
     # sorted clockwise from 9:00 (angle pi). Note that the first argument is y.
     # Mainly for plotting and not implemented for n != 2.
+    if self.n == 1:  # nothing to sort in 1-D
+      if self.nV > 2:  # remove redundant vertices if there are more than two
+        self.minimize_V_rep()
+      return self.V
     if self.n != 2:
       raise NotImplementedError('V_sorted() not implemented for n != 2')
     c = self.centroid
@@ -331,22 +335,41 @@ class Polytope:
   def determine_H_rep(self):
     if not self.in_V_rep:
       raise ValueError('Cannot determine H representation: no V representation')
-    if not self.is_full_dimensional:  # TODO: fix this
-      raise NotImplementedError('Determining H-rep not implemented for '
-                                'polytopes that are not full-dimensional')
-    H = ConvexHull(self.V).equations  # H = [A, -b]
-    A, b_negative = np.split(H, [-1], axis=1)
-    self._set_Ab(A, -b_negative)
+    if not self.is_full_dimensional or self.n < 2:  # TODO: fix this
+      # Use cdd, which handles this case.
+      # cdd needs a column of ones to the left of V (zeros indicate rays):
+      V_cdd = cdd.Matrix(np.hstack((np.ones((self.nV, 1)), self.V)),
+                         number_type='float')
+      V_cdd.rep_type = cdd.RepType.GENERATOR  # specifies that this is V-rep
+      P_cdd = cdd.Polyhedron(V_cdd)
+      H_cdd = P_cdd.get_inequalities()
+      H_bmA = np.array(H_cdd)  # cdd's format of H is [b, -A]
+      # Find the indices of inequalities Ax <= b (i_ineq_rows) and equations
+      # Ax = b (i_eq_rows). lin_set is a a frozenset with indices of
+      # equalities/equations Ax = b.
+      i_ineq_rows = list(set(range(H_cdd.col_size)) - H_cdd.lin_set)
+      i_eq_rows = list(H_cdd.lin_set)
+      A_ineq = H_bmA[i_ineq_rows, 1:]
+      b_ineq = H_bmA[[i_ineq_rows], [0]].T
+      A_eq = H_bmA[i_eq_rows, 1:]
+      b_eq = H_bmA[[i_eq_rows], [0]].T
+      A = np.vstack((A_ineq, A_eq, -A_eq))
+      b = np.vstack((b_ineq, b_eq, -b_eq))
+      self._set_Ab(A, b)
+    else: # use Qhull
+      H = ConvexHull(self.V).equations  # Qhull's format of H is [A, -b]
+      A, b_negative = np.split(H, [-1], axis=1)
+      self._set_Ab(A, -b_negative)
 
-  def determine_V_rep(self):  # also sets rays R (not implemented)
-    # Vertex enumeration from halfspace representation using cddlib.
+  def determine_V_rep(self):  # also determines rays R (not implemented)
+    # Vertex enumeration from halfspace representation using cdd.
     # TODO: shift the polytope to the center? (centroid? Chebyshev center?)
-    # cdd uses the halfspace representation [b, -A] | b - Ax >= 0
+    # cdd uses the halfspace representation [b, -A] | b - Ax >= 0  ==>  Ax <= b.
     if not self.in_H_rep:
       raise ValueError('Cannot determine V representation: no H representation')
     b_mA = np.hstack((self.b, -self.A))  # [b, -A]
     H = cdd.Matrix(b_mA, number_type='float')
-    H.rep_type = cdd.RepType.INEQUALITY
+    H.rep_type = cdd.RepType.INEQUALITY  # specifies that this is H-rep
     H_P = cdd.Polyhedron(H)
     # From the get_generators() documentation: For a polyhedron described as
     #   P = conv(v_1, ..., v_n) + nonneg(r_1, ..., r_s),
@@ -377,17 +400,34 @@ class Polytope:
     # Minimize the number of vertices used to represent the polytope by removing
     # redundant points from the vertex list.
     # TODO: find and account for cases where this does not work
-    # Qhull does not support degenerate polytopes (not full dimensional), such
-    # as lines in n = 2 amd planes in n = 3. ("QhullError: Raised when Qhull
-    # encounters an error condition, such as geometrical degeneracy when options
-    # to resolve are not enabled.")
-    if self.is_full_dimensional:
+    # (1) Qhull does not support degenerate polytopes (not full dimensional),
+    # such as lines in n = 2 amd planes in n = 3. ("QhullError: Raised when
+    # Qhull encounters an error condition, such as geometrical degeneracy when
+    # options to resolve are not enabled.")
+    # (2) Qhull does not support 1-D polytopes ("ValueError: Need at least 2-D
+    # data")
+    if self.is_full_dimensional and self.n >= 2:
       # Indices of the unique vertices forming the convex hull:
       i_V_minimal = ConvexHull(self.V).vertices
       self.V = self.V[i_V_minimal, :]
-    else:  # TODO: fix this
-      raise NotImplementedError('Determining V-rep not implemented for '
-                                'polytopes that are not full-dimensional')
+    else:  # TODO: Use cdd for both cases?
+      # cdd handles this case
+      V_cdd = cdd.Matrix(np.hstack((np.ones((self.nV, 1)), self.V)),
+                         number_type='float')
+      V_cdd.rep_type = cdd.RepType.GENERATOR  # specify that this is V-rep
+      V_cdd.canonicalize()  # removes redundant vertices
+      # TODO: the lines below are copied from determine_V_rep() -- refactor
+      tV = np.array(V_cdd)
+      if tV.any():  # tV == [] if the Polytope is empty
+        V_rows = tV[:, 0] == 1  # bool array of which rows contain vertices
+        R_rows = tV[:, 0] == 0  # and which contain rays (~ V_rows)
+        V = tV[V_rows, 1:]  # array of vertices (one per row)
+        R = tV[R_rows, 1:]  # and of rays
+        if R_rows.any():
+          raise NotImplementedError('Support for rays not implemented')
+      else:
+        V = np.empty((0, self.n))
+      self._set_V(V)
 
   def determine_dim(self):
     # Determine the dimensionality of the polytope using the vertices.
@@ -399,8 +439,8 @@ class Polytope:
     self._dim = np.linalg.matrix_rank(V_subspace)
 
   def support(self, eta):
-    # The support function of the polytope P, evaluated at (or in the
-    # direction) eta in R^n:
+    # The support function of the polytope P, evaluated at (or in the direction)
+    # eta in R^n:
     #   h_P(eta) = sup eta' * u   s.t.   u in P
     # See Eq. (1.11) in Kolmanovsky & Gilbert (1998), "Theory and computation of
     # disturbance  invariant sets for discrete-time linear systems."
@@ -408,6 +448,18 @@ class Polytope:
     result = solve_lp(-eta, A_ub=self.A, b_ub=self.b, bounds=(-np.inf, np.inf))
     h_P_eta = -result.fun  # the support is the optimal objective-function value
     return h_P_eta, result
+
+  def project(self, dimensions):
+    # Planar projection onto the plane specified in dimensions. E.g., to project
+    # a polytope in 3-D onto the x1-x2 plane, dimensions should be (0, 1),
+    # [0, 1], range(2), np.array([0, 1]). np.arange(2), or similar.
+    dimensions = np.atleast_1d(np.squeeze(dimensions))
+    # TODO: implement halfspace version
+    if dimensions.ndim != 1:
+      raise ValueError('dimensions parameter not in allowed form')
+    if not self.in_V_rep:
+      self.determine_V_rep()
+    return Polytope(self.V[:, dimensions])
 
   def plot(self, ax=None, **kwargs):
     # Plot Polytope. Add separate patches for the fill and the edge, so that
@@ -420,6 +472,11 @@ class Polytope:
       ax = plt.gca()
     h_patch = []  # handle, return as tuple
     V_sorted = self.V_sorted()
+    # 1-D polytopes are lines (segments) and need a second dimension for
+    # plotting. For now assumes a 1-D polytope has vertices along the first
+    # coordinate.
+    if self.n == 1:  # add zero-coordinates for second dimension (lift to n = 2)
+      V_sorted = np.hstack((V_sorted, np.zeros((self.nV, 1))))
     # Check for edgecolor. Default is (0, 0, 0, 0), with the fourth 0 being
     # alpha (0 is fully transparent). Passingedgecolor='r', e.g., later
     # translates to (1.0, 0.0, 0.0, 1).
